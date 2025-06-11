@@ -1,0 +1,410 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    box-sizing: border-box;
+  }
+
+  html {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-dark text-gray-100 antialiased;
+    height: 100%;
+    position: relative;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100%;
+    touch-action: manipulation;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-1;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-lighter;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-600 rounded-full hover:bg-gray-500 transition-colors;
+  }
+
+  button, a, [role="button"], input, textarea, select {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    transition: transform 0.05s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                background-color 0.1s ease-out,
+                color 0.1s ease-out;
+  }
+
+  button:active, a:active, [role="button"]:active {
+    transform: scale(0.96);
+  }
+
+  input, textarea, select {
+    font-size: 16px;
+  }
+
+  @media (max-width: 768px) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+    
+    button, a, [role="button"] {
+      transition: transform 0.02s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    }
+
+    button:active, a:active, [role="button"]:active {
+      transform: scale(0.94) !important;
+    }
+  }
+
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-75 disabled:opacity-50 disabled:cursor-not-allowed;
+    touch-action: manipulation;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .btn:active {
+    transform: scale(0.96);
+  }
+
+  .btn-primary {
+    @apply btn bg-accent hover:bg-accent-dark text-white;
+  }
+
+  .btn-secondary {
+    @apply btn bg-dark-lighter hover:bg-dark-light text-white;
+  }
+
+  .input {
+    @apply w-full px-4 py-2 bg-dark-lighter border border-gray-700 rounded-lg 
+           focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent 
+           transition-all duration-75 text-gray-100 placeholder-gray-400;
+    touch-action: manipulation;
+    min-height: 44px;
+  }
+
+  .card {
+    @apply bg-dark-lighter rounded-xl p-6 transition-all duration-75;
+    touch-action: manipulation;
+  }
+
+  .ultra-touch {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.03s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                background-color 0.05s ease-out;
+  }
+
+  .ultra-touch:active {
+    transform: scale(0.94);
+  }
+
+  @media (max-width: 768px) {
+    .mobile-optimized {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    .ultra-touch {
+      transition: transform 0.02s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    }
+
+    .ultra-touch:active {
+      transform: scale(0.92) !important;
+    }
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Logo Animation Styles - Enhanced for Mobile */
+  .logo-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .logo-animated {
+    animation: logoFloat 3s ease-in-out infinite, logoGlow 2s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.3));
+    transition: all 0.3s ease;
+    /* Force hardware acceleration */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform, filter;
+    /* Ensure animations work on mobile */
+    -webkit-animation: logoFloat 3s ease-in-out infinite, logoGlow 2s ease-in-out infinite alternate;
+  }
+
+  .app-name-animated {
+    animation: fadeInUp 1s ease-out 0.5s both;
+    -webkit-animation: fadeInUp 1s ease-out 0.5s both;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform, opacity;
+  }
+
+  @keyframes logoFloat {
+    0%, 100% {
+      transform: translateY(0px) scale(1) translateZ(0);
+      -webkit-transform: translateY(0px) scale(1) translateZ(0);
+    }
+    50% {
+      transform: translateY(-8px) scale(1.02) translateZ(0);
+      -webkit-transform: translateY(-8px) scale(1.02) translateZ(0);
+    }
+  }
+
+  @-webkit-keyframes logoFloat {
+    0%, 100% {
+      -webkit-transform: translateY(0px) scale(1) translateZ(0);
+      transform: translateY(0px) scale(1) translateZ(0);
+    }
+    50% {
+      -webkit-transform: translateY(-8px) scale(1.02) translateZ(0);
+      transform: translateY(-8px) scale(1.02) translateZ(0);
+    }
+  }
+
+  @keyframes logoGlow {
+    0% {
+      filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.3));
+      -webkit-filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.3));
+    }
+    100% {
+      filter: drop-shadow(0 0 30px rgba(34, 197, 94, 0.5));
+      -webkit-filter: drop-shadow(0 0 30px rgba(34, 197, 94, 0.5));
+    }
+  }
+
+  @-webkit-keyframes logoGlow {
+    0% {
+      -webkit-filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.3));
+      filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.3));
+    }
+    100% {
+      -webkit-filter: drop-shadow(0 0 30px rgba(34, 197, 94, 0.5));
+      filter: drop-shadow(0 0 30px rgba(34, 197, 94, 0.5));
+    }
+  }
+
+  @keyframes fadeInUp {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) translateZ(0);
+      -webkit-transform: translateY(20px) translateZ(0);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) translateZ(0);
+      -webkit-transform: translateY(0) translateZ(0);
+    }
+  }
+
+  @-webkit-keyframes fadeInUp {
+    0% {
+      opacity: 0;
+      -webkit-transform: translateY(20px) translateZ(0);
+      transform: translateY(20px) translateZ(0);
+    }
+    100% {
+      opacity: 1;
+      -webkit-transform: translateY(0) translateZ(0);
+      transform: translateY(0) translateZ(0);
+    }
+  }
+
+  /* Subtle pulse effect for the logo container */
+  .logo-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120%;
+    height: 120%;
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) translateZ(0);
+    -webkit-transform: translate(-50%, -50%) translateZ(0);
+    animation: logoPulse 4s ease-in-out infinite;
+    -webkit-animation: logoPulse 4s ease-in-out infinite;
+    z-index: -1;
+    will-change: transform, opacity;
+  }
+
+  @keyframes logoPulse {
+    0%, 100% {
+      transform: translate(-50%, -50%) scale(0.8) translateZ(0);
+      -webkit-transform: translate(-50%, -50%) scale(0.8) translateZ(0);
+      opacity: 0.3;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.2) translateZ(0);
+      -webkit-transform: translate(-50%, -50%) scale(1.2) translateZ(0);
+      opacity: 0.1;
+    }
+  }
+
+  @-webkit-keyframes logoPulse {
+    0%, 100% {
+      -webkit-transform: translate(-50%, -50%) scale(0.8) translateZ(0);
+      transform: translate(-50%, -50%) scale(0.8) translateZ(0);
+      opacity: 0.3;
+    }
+    50% {
+      -webkit-transform: translate(-50%, -50%) scale(1.2) translateZ(0);
+      transform: translate(-50%, -50%) scale(1.2) translateZ(0);
+      opacity: 0.1;
+    }
+  }
+
+  /* Mobile-specific optimizations */
+  @media (max-width: 768px) {
+    .logo-animated {
+      /* Slightly reduced animation intensity for mobile */
+      animation: logoFloatMobile 3s ease-in-out infinite, logoGlowMobile 2s ease-in-out infinite alternate;
+      -webkit-animation: logoFloatMobile 3s ease-in-out infinite, logoGlowMobile 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes logoFloatMobile {
+      0%, 100% {
+        transform: translateY(0px) scale(1) translateZ(0);
+        -webkit-transform: translateY(0px) scale(1) translateZ(0);
+      }
+      50% {
+        transform: translateY(-6px) scale(1.01) translateZ(0);
+        -webkit-transform: translateY(-6px) scale(1.01) translateZ(0);
+      }
+    }
+
+    @-webkit-keyframes logoFloatMobile {
+      0%, 100% {
+        -webkit-transform: translateY(0px) scale(1) translateZ(0);
+        transform: translateY(0px) scale(1) translateZ(0);
+      }
+      50% {
+        -webkit-transform: translateY(-6px) scale(1.01) translateZ(0);
+        transform: translateY(-6px) scale(1.01) translateZ(0);
+      }
+    }
+
+    @keyframes logoGlowMobile {
+      0% {
+        filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.3));
+        -webkit-filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.3));
+      }
+      100% {
+        filter: drop-shadow(0 0 25px rgba(34, 197, 94, 0.4));
+        -webkit-filter: drop-shadow(0 0 25px rgba(34, 197, 94, 0.4));
+      }
+    }
+
+    @-webkit-keyframes logoGlowMobile {
+      0% {
+        -webkit-filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.3));
+        filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.3));
+      }
+      100% {
+        -webkit-filter: drop-shadow(0 0 25px rgba(34, 197, 94, 0.4));
+        filter: drop-shadow(0 0 25px rgba(34, 197, 94, 0.4));
+      }
+    }
+  }
+}
+
+/* Override reduced motion preferences for logo animation specifically */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Keep logo animations even with reduced motion preference */
+  .logo-animated {
+    animation: logoFloat 3s ease-in-out infinite, logoGlow 2s ease-in-out infinite alternate !important;
+    -webkit-animation: logoFloat 3s ease-in-out infinite, logoGlow 2s ease-in-out infinite alternate !important;
+    animation-duration: 3s, 2s !important;
+    animation-iteration-count: infinite, infinite !important;
+    filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.3));
+  }
+
+  .app-name-animated {
+    animation: fadeInUp 1s ease-out 0.5s both !important;
+    -webkit-animation: fadeInUp 1s ease-out 0.5s both !important;
+    animation-duration: 1s !important;
+    animation-iteration-count: 1 !important;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .logo-container::before {
+    animation: logoPulse 4s ease-in-out infinite !important;
+    -webkit-animation: logoPulse 4s ease-in-out infinite !important;
+    animation-duration: 4s !important;
+    animation-iteration-count: infinite !important;
+    opacity: 0.2;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  /* Mobile-specific reduced motion overrides */
+  @media (max-width: 768px) {
+    .logo-animated {
+      animation: logoFloatMobile 3s ease-in-out infinite, logoGlowMobile 2s ease-in-out infinite alternate !important;
+      -webkit-animation: logoFloatMobile 3s ease-in-out infinite, logoGlowMobile 2s ease-in-out infinite alternate !important;
+    }
+  }
+}
+
+@media (prefers-contrast: high) {
+  .btn {
+    border: 2px solid currentColor;
+  }
+  
+  .input {
+    border: 2px solid currentColor;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}
