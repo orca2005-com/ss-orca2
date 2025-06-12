@@ -85,21 +85,35 @@ export function SignupForm() {
       setError('Please fill in all required fields');
       return;
     }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // Password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must be at least 8 characters long and contain uppercase, lowercase, number and special character');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
 
-    const signupData = {
-      ...formData,
+    // Sanitize input
+    const sanitizedData = {
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim().toLowerCase(),
+      password: formData.password,
       role: selectedRole
     };
     
-    localStorage.setItem('signupData', JSON.stringify(signupData));
+    localStorage.setItem('signupData', JSON.stringify(sanitizedData));
     navigate('/create-profile', { state: { role: selectedRole } });
   };
 

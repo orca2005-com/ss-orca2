@@ -73,23 +73,103 @@ export const storage = {
 };
 
 // Error handling
-export const handleApiError = (error: any) => {
-  if (error.response?.data) {
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+      code?: string;
+      errors?: Record<string, string[]>;
+    };
+    status?: number;
+  };
+  message?: string;
+  code?: string;
+}
+
+export const handleApiError = (error: ApiError) => {
+  // Handle validation errors
+  if (error.response?.data?.errors) {
+    const firstError = Object.values(error.response.data.errors)[0][0];
     return {
-      message: error.response.data.message || 'An error occurred',
-      code: error.response.data.code || 'UNKNOWN_ERROR'
+      message: firstError,
+      code: 'VALIDATION_ERROR'
     };
   }
-  
-  if (error.message) {
+
+  // Handle specific HTTP status codes
+  if (error.response?.status) {
+    switch (error.response.status) {
+      case 401:
+        return {
+          message: 'Your session has expired. Please log in again.',
+          code: 'UNAUTHORIZED'
+        };
+      case 403:
+        return {
+          message: 'You do not have permission to perform this action.',
+          code: 'FORBIDDEN'
+        };
+      case 404:
+        return {
+          message: 'The requested resource was not found.',
+          code: 'NOT_FOUND'
+        };
+      case 429:
+        return {
+          message: 'Too many requests. Please try again later.',
+          code: 'RATE_LIMITED'
+        };
+      case 500:
+        return {
+          message: 'An internal server error occurred. Please try again later.',
+          code: 'SERVER_ERROR'
+        };
+    }
+  }
+
+  // Handle network errors
+  if (error.message?.includes('Network Error')) {
     return {
-      message: error.message,
+      message: 'Unable to connect to the server. Please check your internet connection.',
       code: 'NETWORK_ERROR'
     };
   }
-  
+
+  // Handle timeout errors
+  if (error.message?.includes('timeout')) {
+    return {
+      message: 'The request timed out. Please try again.',
+      code: 'TIMEOUT_ERROR'
+    };
+  }
+
+  // Handle specific error codes
+  if (error.code) {
+    switch (error.code) {
+      case 'ECONNABORTED':
+        return {
+          message: 'The request was aborted. Please try again.',
+          code: 'ABORTED_ERROR'
+        };
+      case 'ERR_NETWORK':
+        return {
+          message: 'Network error. Please check your connection.',
+          code: 'NETWORK_ERROR'
+        };
+    }
+  }
+
+  // Handle custom error messages
+  if (error.response?.data?.message) {
+    return {
+      message: error.response.data.message,
+      code: error.response.data.code || 'UNKNOWN_ERROR'
+    };
+  }
+
+  // Fallback error
   return {
-    message: 'An unexpected error occurred',
+    message: 'An unexpected error occurred. Please try again later.',
     code: 'UNKNOWN_ERROR'
   };
 };

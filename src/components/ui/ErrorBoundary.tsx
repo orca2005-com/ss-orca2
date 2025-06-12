@@ -1,16 +1,18 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import React, { Component, ErrorInfo } from 'react';
 import { motion } from 'framer-motion';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  retryCount: number;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -19,34 +21,43 @@ export class ErrorBoundary extends Component<Props, State> {
     this.state = {
       hasError: false,
       error: null,
-      errorInfo: null
+      errorInfo: null,
+      retryCount: 0
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return {
       hasError: true,
-      error,
-      errorInfo: null
+      error
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-    
     this.setState({
       error,
       errorInfo
     });
 
+    // Call the onError callback if provided
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
+
     // Log to error reporting service in production
     if (process.env.NODE_ENV === 'production') {
       // Example: Sentry.captureException(error, { extra: errorInfo });
+      console.error('Error caught by boundary:', error, errorInfo);
     }
   }
 
   handleReload = () => {
-    window.location.reload();
+    this.setState(prevState => ({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      retryCount: prevState.retryCount + 1
+    }));
   };
 
   handleGoHome = () => {
@@ -80,38 +91,36 @@ export class ErrorBoundary extends Component<Props, State> {
                 Oops! Something went wrong
               </h1>
               <p className="text-gray-400 text-sm">
-                We encountered an unexpected error. Don't worry, we're on it!
+                {this.state.error?.message || 'We encountered an unexpected error. Don\'t worry, we\'re on it!'}
               </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <button
                 onClick={this.handleReload}
-                className="w-full flex items-center justify-center space-x-2 bg-accent hover:bg-accent-dark text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200"
+                className="w-full flex items-center justify-center space-x-2 bg-accent hover:bg-accent-light 
+                text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200"
               >
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className="h-5 w-5" />
                 <span>Try Again</span>
               </button>
 
               <button
                 onClick={this.handleGoHome}
-                className="w-full flex items-center justify-center space-x-2 bg-dark-lighter hover:bg-dark-light text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200"
+                className="w-full flex items-center justify-center space-x-2 bg-dark-lighter hover:bg-dark-light 
+                text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200"
               >
-                <Home className="w-5 h-5" />
-                <span>Go Home</span>
+                <Home className="h-5 w-5" />
+                <span>Go to Home</span>
               </button>
             </div>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className="text-left bg-dark-lighter p-4 rounded-lg">
-                <summary className="text-red-400 cursor-pointer mb-2">
-                  Error Details (Development)
-                </summary>
-                <pre className="text-xs text-gray-300 overflow-auto">
-                  {this.state.error.toString()}
-                  {this.state.errorInfo?.componentStack}
+            {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
+              <div className="mt-8 p-4 bg-dark-lighter rounded-lg text-left overflow-auto max-h-60">
+                <pre className="text-xs text-red-400 whitespace-pre-wrap">
+                  {this.state.error?.stack}
                 </pre>
-              </details>
+              </div>
             )}
           </motion.div>
         </div>

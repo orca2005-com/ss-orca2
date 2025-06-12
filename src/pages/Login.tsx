@@ -11,6 +11,9 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [prefillEmail, setPrefillEmail] = useState<string>('');
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockTimeLeft, setBlockTimeLeft] = useState(0);
 
   // Check for success message from signup
   useEffect(() => {
@@ -25,12 +28,48 @@ export default function Login() {
     }
   }, [location.state]);
 
+  // Handle rate limiting
+  useEffect(() => {
+    if (isBlocked && blockTimeLeft > 0) {
+      const timer = setTimeout(() => {
+        setBlockTimeLeft(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (isBlocked && blockTimeLeft === 0) {
+      setIsBlocked(false);
+      setLoginAttempts(0);
+    }
+  }, [isBlocked, blockTimeLeft]);
+
   const handleLogin = async (email: string, password: string, remember: boolean) => {
     try {
+      if (isBlocked) {
+        setError(`Too many attempts. Please try again in ${blockTimeLeft} seconds`);
+        return;
+      }
+
       setError(null);
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
       await login(email, password);
+      setLoginAttempts(0);
     } catch (err) {
-      setError('Invalid email or password');
+      const newAttempts = loginAttempts + 1;
+      setLoginAttempts(newAttempts);
+      
+      if (newAttempts >= 5) {
+        setIsBlocked(true);
+        setBlockTimeLeft(300); // 5 minutes block
+        setError('Too many failed attempts. Please try again in 5 minutes');
+      } else {
+        setError('Invalid email or password');
+      }
     }
   };
 
@@ -97,7 +136,13 @@ export default function Login() {
             </motion.div>
           )}
 
-          <LoginForm onSubmit={handleLogin} prefillEmail={prefillEmail} />
+          <LoginForm 
+            onSubmit={handleLogin} 
+            prefillEmail={prefillEmail}
+            error={error}
+            isBlocked={isBlocked}
+            blockTimeLeft={blockTimeLeft}
+          />
         </motion.div>
       </div>
     </div>

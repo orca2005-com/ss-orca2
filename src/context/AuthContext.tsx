@@ -5,6 +5,16 @@ import { mockProfiles } from '../data/mockProfiles';
 import { handleApiError, storage } from '../utils';
 import { STORAGE_KEYS, ERROR_MESSAGES } from '../constants';
 
+interface StoredUser extends User {
+  expiresAt: string;
+}
+
+interface SignupData {
+  email: string;
+  fullName: string;
+  role: string;
+}
+
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
@@ -16,97 +26,58 @@ interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   clearError: () => void;
-  createUserAccount: (userData: any) => Promise<User>;
+  createUserAccount: (userData: SignupData) => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const savedUser = storage.get<User>(STORAGE_KEYS.AUTH_TOKEN);
-      return savedUser;
-    } catch (error) {
-      console.error('Error loading saved user:', error);
-      return null;
-    }
-  });
-  
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
+  // Check for existing session on mount
   useEffect(() => {
-    let messageInterval: NodeJS.Timeout;
-    let notificationInterval: NodeJS.Timeout;
-
-    try {
-      messageInterval = setInterval(() => {
-        try {
-          setUnreadMessages(prev => Math.floor(Math.random() * 5));
-        } catch (error) {
-          console.error('Error updating messages:', error);
+    const checkAuth = async () => {
+      try {
+        const storedUser = storage.get<StoredUser>(STORAGE_KEYS.AUTH_TOKEN);
+        if (storedUser) {
+          // Check if token is expired
+          if (storedUser.expiresAt && new Date(storedUser.expiresAt) > new Date()) {
+            setUser(storedUser);
+          } else {
+            // Token expired, clear storage and redirect to login
+            storage.remove(STORAGE_KEYS.AUTH_TOKEN);
+            navigate('/login', { state: { message: 'Your session has expired. Please log in again.' } });
+          }
         }
-      }, 5000);
-
-      notificationInterval = setInterval(() => {
-        try {
-          setUnreadNotifications(prev => Math.floor(Math.random() * 8));
-        } catch (error) {
-          console.error('Error updating notifications:', error);
-        }
-      }, 7000);
-    } catch (error) {
-      console.error('Error setting up intervals:', error);
-    }
-
-    return () => {
-      if (messageInterval) clearInterval(messageInterval);
-      if (notificationInterval) clearInterval(notificationInterval);
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        storage.remove(STORAGE_KEYS.AUTH_TOKEN);
+      }
     };
-  }, []);
 
-  const createUserAccount = async (userData: any): Promise<User> => {
+    checkAuth();
+  }, [navigate]);
+
+  const createUserAccount = async (userData: SignupData): Promise<User> => {
     try {
-      const userId = Date.now().toString();
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       const newUser: User = {
-        id: userId,
+        id: Math.random().toString(36).substr(2, 9),
         email: userData.email,
         name: userData.fullName,
         role: userData.role,
       };
-
-      const newProfile = {
-        id: userId,
-        name: userData.fullName,
-        role: userData.role,
-        avatar: getDefaultAvatar(userData.role),
-        coverImage: getDefaultCoverImage(userData.role),
-        sport: userData.sport || getDefaultSport(userData.role),
-        location: userData.location || 'Location not set',
-        bio: userData.bio || getBioByRole(userData.role),
-        stats: {
-          followers: 0,
-          connections: 0
-        },
-        achievements: userData.achievements || [],
-        certifications: shouldHaveCertifications(userData.role) ? (userData.certifications || []) : undefined,
-        posts: [],
-        media: [],
-        isPrivate: false,
-        connections: [],
-        externalLink: userData.website || undefined
-      };
-
-      (mockProfiles as any)[userId] = newProfile;
-
+      
       return newUser;
     } catch (error) {
-      console.error('Error creating user account:', error);
-      throw new Error('Failed to create account');
+      throw new Error('Failed to create user account');
     }
   };
 
@@ -127,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Password must be at least 6 characters');
       }
 
-      const signupData = storage.get('signupData');
+      const signupData = storage.get<SignupData>('signupData');
       
       let mockUser: User;
       
@@ -143,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
+      // Simulate API call with error handling
       await new Promise((resolve, reject) => {
         setTimeout(() => {
           if (Math.random() < 0.05) {
@@ -153,17 +125,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }, 1000);
       });
 
+      // Add expiration time to user object (24 hours from now)
+      const userWithExpiration: StoredUser = {
+        ...mockUser,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      };
+
       setUser(mockUser);
       
       try {
-        storage.set(STORAGE_KEYS.AUTH_TOKEN, mockUser);
+        storage.set(STORAGE_KEYS.AUTH_TOKEN, userWithExpiration);
       } catch (storageError) {
         console.warn('Failed to save user to localStorage:', storageError);
+        throw new Error('Failed to save session');
       }
 
       navigate('/home');
     } catch (error) {
-      const apiError = handleApiError(error);
+      const apiError = handleApiError(error as any);
       setError(apiError.message);
       throw error;
     } finally {

@@ -11,7 +11,8 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: string; // Changed from union type to string for flexibility
+  role: string;
+  expiresAt?: string;
 }
 
 export interface Profile {
