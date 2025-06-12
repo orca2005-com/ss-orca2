@@ -87,7 +87,7 @@ export function SuggestedConnections({ connections }: SuggestedConnectionsProps)
               </motion.button>
 
               <div className="flex items-start space-x-4">
-                {/* Avatar */}
+                {/* Avatar - Removed green circle and dot */}
                 <button
                   onClick={() => handleViewProfile(connection.id)}
                   className="relative flex-shrink-0 hover:scale-105 transition-transform duration-200"
@@ -99,8 +99,6 @@ export function SuggestedConnections({ connections }: SuggestedConnectionsProps)
                     placeholder={createPlaceholderUrl(connection.avatar)}
                     priority={index < 2}
                   />
-                  {/* Online indicator */}
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-accent rounded-full border-2 border-dark-lighter" />
                 </button>
 
                 {/* Content */}

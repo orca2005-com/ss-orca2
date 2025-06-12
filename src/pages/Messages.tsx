@@ -163,9 +163,6 @@ export default function Messages() {
                 alt={selectedChat.name}
                 className="w-8 h-8 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all"
               />
-              {selectedChat.isOnline && (
-                <div className="absolute bottom-0 right-0 w-2 h-2 bg-accent rounded-full border border-dark-lighter" />
-              )}
             </div>
             <div className="text-left">
               <h3 className="font-medium text-sm text-white hover:text-accent transition-colors">{selectedChat.name}</h3>
@@ -240,9 +237,6 @@ export default function Messages() {
                     alt={chat.name}
                     className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all"
                   />
-                  {chat.isOnline && !chat.isGroup && (
-                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-accent rounded-full border-2 border-dark-lighter" />
-                  )}
                   {chat.isGroup && (
                     <div className="absolute bottom-0 right-0 w-4 h-4 bg-accent rounded-full border-2 border-dark-lighter flex items-center justify-center">
                       <Users className="w-2.5 h-2.5 text-white" />
@@ -288,9 +282,6 @@ export default function Messages() {
                     alt={selectedChat.name}
                     className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all"
                   />
-                  {selectedChat.isOnline && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-accent rounded-full border-2 border-dark-lighter" />
-                  )}
                 </div>
                 <div className="text-left">
                   <h3 className="font-semibold text-white hover:text-accent transition-colors">{selectedChat.name}</h3>

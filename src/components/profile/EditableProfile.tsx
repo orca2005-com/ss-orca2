@@ -232,7 +232,7 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
           <div className="bg-dark-lighter/80 backdrop-blur-xl rounded-2xl p-6 md:p-8 shadow-2xl border border-white/10">
             <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-6 lg:space-y-0 lg:space-x-8">
               
-              {/* Enhanced Avatar Section */}
+              {/* Enhanced Avatar Section - Removed green circle and dot */}
               <div className="relative mx-auto lg:mx-0">
                 <div 
                   className="relative cursor-pointer group"
@@ -241,9 +241,6 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                   onMouseLeave={() => setIsHoveringAvatar(false)}
                 >
                   {isEditing && <input {...getAvatarInputProps()} />}
-                  
-                  {/* Avatar Ring Animation */}
-                  <div className="absolute -inset-1 bg-gradient-to-r from-accent via-accent-light to-accent rounded-full opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse" />
                   
                   <OptimizedImage
                     src={getOptimizedPexelsUrl(
@@ -256,11 +253,6 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                     priority={true}
                     containerClassName="w-28 h-28 md:w-36 md:h-36"
                   />
-                  
-                  {/* Status Indicator */}
-                  <div className="absolute bottom-2 right-2 w-6 h-6 bg-accent rounded-full border-3 border-dark-lighter flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                  </div>
 
                   {isEditing && isHoveringAvatar && (
                     <motion.div
