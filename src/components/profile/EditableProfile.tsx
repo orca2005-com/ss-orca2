@@ -4,6 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { createPortal } from 'react-dom';
 import { Profile } from '../../types';
+import { Avatar } from '../ui/Avatar';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Input } from '../ui/Input';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
 
@@ -30,7 +35,7 @@ function ShareDropdown({ isOpen, onClose, buttonRef, onShare }: ShareDropdownPro
       const rect = buttonRef.current.getBoundingClientRect();
       setPosition({
         top: rect.bottom + 8,
-        left: rect.right - 192 // 192px is min-w-48 (12rem * 16px)
+        left: rect.right - 192
       });
     }
   }, [isOpen, buttonRef]);
@@ -39,23 +44,14 @@ function ShareDropdown({ isOpen, onClose, buttonRef, onShare }: ShareDropdownPro
 
   return createPortal(
     <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 z-[9998]"
-        onClick={onClose}
-      />
-      
-      {/* Dropdown */}
+      <div className="fixed inset-0 z-[9998]" onClick={onClose} />
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: -10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -10 }}
           className="fixed bg-dark-lighter/95 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden z-[9999] border border-white/10 min-w-48"
-          style={{
-            top: position.top,
-            left: position.left
-          }}
+          style={{ top: position.top, left: position.left }}
         >
           {[
             { label: 'Facebook', action: () => onShare('facebook') },
@@ -152,19 +148,19 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'player': return <Star className="w-4 h-4" />;
-      case 'coach': return <Award className="w-4 h-4" />;
-      case 'team': return <Users className="w-4 h-4" />;
-      default: return <Star className="w-4 h-4" />;
+      case 'player': return Star;
+      case 'coach': return Award;
+      case 'team': return Users;
+      default: return Star;
     }
   };
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'player': return 'text-blue-400 bg-blue-400/10';
-      case 'coach': return 'text-purple-400 bg-purple-400/10';
-      case 'team': return 'text-green-400 bg-green-400/10';
-      default: return 'text-accent bg-accent/10';
+      case 'player': return 'info';
+      case 'coach': return 'warning';
+      case 'team': return 'success';
+      default: return 'accent';
     }
   };
 
@@ -229,7 +225,7 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
           className="relative"
         >
           {/* Glassmorphism Profile Card */}
-          <div className="bg-dark-lighter/80 backdrop-blur-xl rounded-2xl p-6 md:p-8 shadow-2xl border border-white/10">
+          <Card padding="lg" className="bg-dark-lighter/80 backdrop-blur-xl shadow-2xl border border-white/10">
             <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-6 lg:space-y-0 lg:space-x-8">
               
               {/* Enhanced Avatar Section - Removed green circle and dot */}
@@ -242,16 +238,13 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                 >
                   {isEditing && <input {...getAvatarInputProps()} />}
                   
-                  <OptimizedImage
-                    src={getOptimizedPexelsUrl(
-                      newAvatar ? URL.createObjectURL(newAvatar) : formData.avatar,
-                      'medium'
-                    )}
+                  <Avatar
+                    src={newAvatar ? URL.createObjectURL(newAvatar) : formData.avatar}
                     alt={formData.name}
-                    className="relative w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-dark-lighter object-cover transition-transform duration-300 group-hover:scale-105"
-                    placeholder={createPlaceholderUrl(formData.avatar)}
+                    size="2xl"
+                    className="border-4 border-dark-lighter"
                     priority={true}
-                    containerClassName="w-28 h-28 md:w-36 md:h-36"
+                    quality="medium"
                   />
 
                   {isEditing && isHoveringAvatar && (
@@ -273,20 +266,13 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                   {/* Name and Role Section */}
                   <div className="space-y-3">
                     {isEditing ? (
-                      <div className="relative">
-                        <input
-                          type="text"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleInputChange}
-                          maxLength={150}
-                          className="text-2xl md:text-4xl font-bold bg-dark/50 text-white rounded-xl px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-accent border border-white/10 backdrop-blur-sm"
-                          placeholder="Your name"
-                        />
-                        <span className="absolute right-3 bottom-3 text-xs text-gray-400">
-                          {formData.name.length}/150
-                        </span>
-                      </div>
+                      <Input
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="Your name"
+                        className="text-2xl md:text-4xl font-bold"
+                      />
                     ) : (
                       <motion.h1 
                         initial={{ opacity: 0, y: 20 }}
@@ -311,13 +297,11 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                           <option value="team">Team</option>
                           <option value="coach">Coach</option>
                         </select>
-                        <input
-                          type="text"
+                        <Input
                           name="sport"
                           value={formData.sport}
                           onChange={handleInputChange}
                           placeholder="Sport"
-                          className="bg-dark/50 text-white rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-accent border border-white/10 backdrop-blur-sm"
                         />
                       </div>
                     ) : (
@@ -327,13 +311,16 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                         transition={{ delay: 0.3 }}
                         className="flex items-center justify-center lg:justify-start space-x-3"
                       >
-                        <div className={`flex items-center space-x-2 px-4 py-2 rounded-full ${getRoleColor(formData.role)}`}>
-                          {getRoleIcon(formData.role)}
-                          <span className="font-medium capitalize">{formData.role}</span>
-                        </div>
-                        <div className="px-4 py-2 bg-white/10 rounded-full backdrop-blur-sm">
-                          <span className="text-white font-medium">{formData.sport}</span>
-                        </div>
+                        <Badge 
+                          variant={getRoleColor(formData.role) as any}
+                          icon={getRoleIcon(formData.role)}
+                          size="md"
+                        >
+                          {formData.role}
+                        </Badge>
+                        <Badge variant="default" size="md">
+                          {formData.sport}
+                        </Badge>
                       </motion.div>
                     )}
                   </div>
@@ -350,28 +337,21 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                         placeholder="Tell us about yourself..."
                       />
                       <div className="grid md:grid-cols-2 gap-3">
-                        <div className="relative">
-                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
-                          <input
-                            type="text"
-                            name="location"
-                            value={formData.location}
-                            onChange={handleInputChange}
-                            placeholder="Location"
-                            className="w-full pl-10 pr-4 py-3 bg-dark/50 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-accent border border-white/10 backdrop-blur-sm"
-                          />
-                        </div>
-                        <div className="relative">
-                          <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
-                          <input
-                            type="url"
-                            name="externalLink"
-                            value={formData.externalLink || ''}
-                            onChange={handleInputChange}
-                            placeholder="Website"
-                            className="w-full pl-10 pr-4 py-3 bg-dark/50 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-accent border border-white/10 backdrop-blur-sm"
-                          />
-                        </div>
+                        <Input
+                          icon={MapPin}
+                          name="location"
+                          value={formData.location}
+                          onChange={handleInputChange}
+                          placeholder="Location"
+                        />
+                        <Input
+                          icon={LinkIcon}
+                          name="externalLink"
+                          value={formData.externalLink || ''}
+                          onChange={handleInputChange}
+                          placeholder="Website"
+                          type="url"
+                        />
                       </div>
                     </div>
                   ) : (
@@ -442,46 +422,38 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                 {canEdit ? (
                   isEditing ? (
                     <div className="flex space-x-3">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                      <Button
+                        variant="primary"
+                        icon={Check}
                         onClick={handleSave}
-                        className="flex items-center space-x-2 px-6 py-3 bg-accent text-white rounded-xl hover:bg-accent-dark transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
                       >
-                        <Check className="w-5 h-5" />
-                        <span>Save Changes</span>
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        Save Changes
+                      </Button>
+                      <Button
+                        variant="danger"
+                        icon={X}
                         onClick={handleCancel}
-                        className="flex items-center space-x-2 px-6 py-3 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 transition-all duration-200 font-medium border border-red-500/30"
                       >
-                        <X className="w-5 h-5" />
-                        <span>Cancel</span>
-                      </motion.button>
+                        Cancel
+                      </Button>
                     </div>
                   ) : (
                     <div className="flex space-x-3">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                      <Button
+                        variant="secondary"
+                        icon={Edit2}
                         onClick={() => onEditingChange(true)}
-                        className="flex items-center space-x-2 px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-200 font-medium backdrop-blur-sm border border-white/20"
                       >
-                        <Edit2 className="w-5 h-5" />
-                        <span>Edit Profile</span>
-                      </motion.button>
-                      <motion.button
+                        Edit Profile
+                      </Button>
+                      <Button
                         ref={shareButtonRef}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        variant="outline"
+                        icon={Share2}
                         onClick={() => setShowShareOptions(!showShareOptions)}
-                        className="flex items-center space-x-2 px-6 py-3 bg-accent/20 text-accent rounded-xl hover:bg-accent/30 transition-all duration-200 font-medium border border-accent/30"
                       >
-                        <Share2 className="w-5 h-5" />
-                        <span>Share</span>
-                      </motion.button>
+                        Share
+                      </Button>
                       <ShareDropdown
                         isOpen={showShareOptions}
                         onClose={() => setShowShareOptions(false)}
@@ -491,16 +463,14 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                     </div>
                   )
                 ) : (
-                  <motion.button
+                  <Button
                     ref={shareButtonRef}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    variant="outline"
+                    icon={Share2}
                     onClick={() => setShowShareOptions(!showShareOptions)}
-                    className="flex items-center space-x-2 px-6 py-3 bg-accent/20 text-accent rounded-xl hover:bg-accent/30 transition-all duration-200 font-medium border border-accent/30"
                   >
-                    <Share2 className="w-5 h-5" />
-                    <span>Share Profile</span>
-                  </motion.button>
+                    Share Profile
+                  </Button>
                 )}
                 
                 {/* Share dropdown for non-editing mode */}
@@ -514,7 +484,7 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                 )}
               </div>
             </div>
-          </div>
+          </Card>
         </motion.div>
       </div>
     </div>

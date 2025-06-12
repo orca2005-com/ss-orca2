@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, Users, ArrowLeft } from 'lucide-react';
 import { MessageList } from '../components/messages/MessageList';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
+import { Avatar } from '../components/ui/Avatar';
+import { StatusIndicator } from '../components/ui/StatusIndicator';
+import { Input } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -157,24 +160,26 @@ export default function Messages() {
             onClick={(e) => handleChatProfileClick(selectedChat.id, e)}
             className="flex items-center space-x-3 ml-1 hover:bg-dark/50 rounded-lg p-2 -m-2 transition-colors flex-1"
           >
-            <div className="relative">
-              <img
-                src={selectedChat.avatar}
-                alt={selectedChat.name}
-                className="w-8 h-8 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all"
-              />
-            </div>
+            <Avatar
+              src={selectedChat.avatar}
+              alt={selectedChat.name}
+              size="sm"
+              onClick={() => handleChatProfileClick(selectedChat.id, {} as React.MouseEvent)}
+              showGroupIndicator={selectedChat.isGroup}
+            />
             <div className="text-left">
               <h3 className="font-medium text-sm text-white hover:text-accent transition-colors">{selectedChat.name}</h3>
-              <p className="text-xs text-gray-400">
+              <div className="flex items-center space-x-2">
                 {selectedChat.isTyping ? (
-                  <span className="text-accent">Typing...</span>
-                ) : selectedChat.isOnline ? (
-                  'Online'
+                  <span className="text-xs text-accent">Typing...</span>
                 ) : (
-                  'Last seen recently'
+                  <StatusIndicator 
+                    status={selectedChat.isOnline ? 'online' : 'offline'} 
+                    size="sm" 
+                    showText 
+                  />
                 )}
-              </p>
+              </div>
             </div>
           </button>
         </div>
@@ -207,16 +212,13 @@ export default function Messages() {
               )}
             </div>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search messages..."
-              className="w-full pl-9 pr-3 py-2 bg-dark border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-100 text-white placeholder-gray-400 text-sm ultra-touch"
-            />
-          </div>
+          <Input
+            icon={Search}
+            placeholder="Search messages..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="sm"
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
@@ -232,16 +234,12 @@ export default function Messages() {
                   onClick={(e) => handleChatProfileClick(chat.id, e)}
                   className="relative flex-shrink-0 hover:scale-105 transition-transform"
                 >
-                  <img
+                  <Avatar
                     src={chat.avatar}
                     alt={chat.name}
-                    className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all"
+                    size="md"
+                    showGroupIndicator={chat.isGroup}
                   />
-                  {chat.isGroup && (
-                    <div className="absolute bottom-0 right-0 w-4 h-4 bg-accent rounded-full border-2 border-dark-lighter flex items-center justify-center">
-                      <Users className="w-2.5 h-2.5 text-white" />
-                    </div>
-                  )}
                 </button>
                 <button
                   onClick={() => setSelectedChat(chat)}
@@ -276,24 +274,24 @@ export default function Messages() {
                 onClick={(e) => handleChatProfileClick(selectedChat.id, e)}
                 className="flex items-center space-x-3 hover:bg-dark/50 rounded-lg p-2 -m-2 transition-colors"
               >
-                <div className="relative">
-                  <img
-                    src={selectedChat.avatar}
-                    alt={selectedChat.name}
-                    className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all"
-                  />
-                </div>
+                <Avatar
+                  src={selectedChat.avatar}
+                  alt={selectedChat.name}
+                  size="md"
+                  showGroupIndicator={selectedChat.isGroup}
+                />
                 <div className="text-left">
                   <h3 className="font-semibold text-white hover:text-accent transition-colors">{selectedChat.name}</h3>
-                  <p className="text-sm text-gray-400">
+                  <div className="flex items-center space-x-2">
                     {selectedChat.isTyping ? (
-                      <span className="text-accent">Typing...</span>
-                    ) : selectedChat.isOnline ? (
-                      'Online'
+                      <span className="text-sm text-accent">Typing...</span>
                     ) : (
-                      'Last seen recently'
+                      <StatusIndicator 
+                        status={selectedChat.isOnline ? 'online' : 'offline'} 
+                        showText 
+                      />
                     )}
-                  </p>
+                  </div>
                 </div>
               </button>
             </div>
