@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '../types';
 import { mockProfiles } from '../data/mockProfiles';
-import { handleApiError, storage } from '../utils';
+import { handleApiError, storage, validateEmail, validatePassword, sanitizeText, createRateLimiter } from '../utils';
 import { STORAGE_KEYS, ERROR_MESSAGES } from '../constants';
 
 interface StoredUser extends User {
@@ -31,6 +31,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Rate limiter for login attempts (5 attempts per 15 minutes)
+const loginRateLimiter = createRateLimiter(5, 15 * 60 * 1000);
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
@@ -45,13 +48,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const storedUser = storage.get<StoredUser>(STORAGE_KEYS.AUTH_TOKEN);
         if (storedUser) {
+          // Validate stored user data
+          if (!storedUser.id || !storedUser.email || !storedUser.name) {
+            console.warn('Invalid stored user data');
+            storage.remove(STORAGE_KEYS.AUTH_TOKEN);
+            return;
+          }
+
           // Check if token is expired
           if (storedUser.expiresAt && new Date(storedUser.expiresAt) > new Date()) {
-            setUser(storedUser);
+            // Sanitize user data
+            const sanitizedUser: User = {
+              id: sanitizeText(storedUser.id),
+              email: sanitizeText(storedUser.email),
+              name: sanitizeText(storedUser.name),
+              role: sanitizeText(storedUser.role)
+            };
+            setUser(sanitizedUser);
           } else {
             // Token expired, clear storage and redirect to login
             storage.remove(STORAGE_KEYS.AUTH_TOKEN);
-            navigate('/login', { state: { message: 'Your session has expired. Please log in again.' } });
+            navigate('/login', { 
+              state: { message: 'Your session has expired. Please log in again.' },
+              replace: true 
+            });
           }
         }
       } catch (error) {
@@ -65,18 +85,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const createUserAccount = async (userData: SignupData): Promise<User> => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Validate input data
+      if (!userData.email || !userData.fullName || !userData.role) {
+        throw new Error('Missing required user data');
+      }
+
+      if (!validateEmail(userData.email)) {
+        throw new Error('Invalid email format');
+      }
+
+      // Sanitize input data
+      const sanitizedData = {
+        email: sanitizeText(userData.email.toLowerCase()),
+        fullName: sanitizeText(userData.fullName),
+        role: sanitizeText(userData.role)
+      };
+
+      // Simulate API call with validation
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simulate validation errors
+          if (sanitizedData.email === 'test@blocked.com') {
+            reject(new Error('This email is not allowed'));
+            return;
+          }
+          resolve(true);
+        }, 1000);
+      });
       
       const newUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        email: userData.email,
-        name: userData.fullName,
-        role: userData.role,
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+        email: sanitizedData.email,
+        name: sanitizedData.fullName,
+        role: sanitizedData.role,
       };
       
       return newUser;
     } catch (error) {
+      console.error('Error creating user account:', error);
       throw new Error('Failed to create user account');
     }
   };
@@ -86,39 +132,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     
     try {
+      // Input validation
       if (!email || !password) {
         throw new Error(ERROR_MESSAGES.VALIDATION_ERROR);
       }
 
-      if (!email.includes('@')) {
+      // Sanitize inputs
+      const sanitizedEmail = sanitizeText(email.toLowerCase());
+      const sanitizedPassword = password; // Don't sanitize password as it may contain special chars
+
+      // Validate email format
+      if (!validateEmail(sanitizedEmail)) {
         throw new Error('Please enter a valid email address');
       }
 
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
+      // Validate password
+      const passwordValidation = validatePassword(sanitizedPassword);
+      if (!passwordValidation.isValid) {
+        throw new Error('Password does not meet security requirements');
       }
 
+      // Rate limiting check
+      const clientId = `${sanitizedEmail}_${navigator.userAgent}`;
+      if (!loginRateLimiter(clientId)) {
+        throw new Error('Too many login attempts. Please try again in 15 minutes.');
+      }
+
+      // Get signup data if exists
       const signupData = storage.get<SignupData>('signupData');
       
       let mockUser: User;
       
-      if (signupData && signupData.email === email) {
+      if (signupData && signupData.email === sanitizedEmail) {
         mockUser = await createUserAccount(signupData);
         storage.remove('signupData');
       } else {
+        // Use existing mock user
+        const profile = Object.values(mockProfiles).find(p => 
+          p.name.toLowerCase().includes('john') || p.id === '1'
+        );
+        
+        if (!profile) {
+          throw new Error('User not found');
+        }
+
         mockUser = {
-          id: '1',
-          email,
-          name: mockProfiles['1'].name,
-          role: mockProfiles['1'].role,
+          id: profile.id,
+          email: sanitizedEmail,
+          name: profile.name,
+          role: profile.role,
         };
       }
 
       // Simulate API call with error handling
       await new Promise((resolve, reject) => {
         setTimeout(() => {
-          if (Math.random() < 0.05) {
+          // Simulate various error conditions
+          if (Math.random() < 0.02) { // 2% chance of server error
             reject(new Error(ERROR_MESSAGES.SERVER_ERROR));
+          } else if (sanitizedEmail === 'blocked@example.com') {
+            reject(new Error('This account has been suspended'));
+          } else if (sanitizedPassword === 'wrongpassword') {
+            reject(new Error('Invalid credentials'));
           } else {
             resolve(true);
           }
@@ -133,14 +208,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(mockUser);
       
-      try {
-        storage.set(STORAGE_KEYS.AUTH_TOKEN, userWithExpiration);
-      } catch (storageError) {
-        console.warn('Failed to save user to localStorage:', storageError);
-        throw new Error('Failed to save session');
+      // Store user data securely
+      const stored = storage.set(STORAGE_KEYS.AUTH_TOKEN, userWithExpiration, 24);
+      if (!stored) {
+        console.warn('Failed to save user session');
+        // Continue anyway as user is logged in
       }
 
-      navigate('/home');
+      navigate('/home', { replace: true });
     } catch (error) {
       const apiError = handleApiError(error as any);
       setError(apiError.message);
@@ -157,25 +232,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUnreadNotifications(0);
       setError(null);
       
-      try {
-        storage.remove(STORAGE_KEYS.AUTH_TOKEN);
-        storage.remove(STORAGE_KEYS.USER_PREFERENCES);
-        storage.remove('signupData');
-      } catch (storageError) {
-        console.warn('Failed to clear localStorage:', storageError);
-      }
+      // Clear all stored data
+      const keysToRemove = [
+        STORAGE_KEYS.AUTH_TOKEN,
+        STORAGE_KEYS.USER_PREFERENCES,
+        'signupData'
+      ];
       
-      navigate('/login');
+      keysToRemove.forEach(key => {
+        try {
+          storage.remove(key);
+        } catch (storageError) {
+          console.warn(`Failed to clear ${key}:`, storageError);
+        }
+      });
+      
+      navigate('/login', { replace: true });
     } catch (error) {
       console.error('Error during logout:', error);
-      navigate('/login');
+      // Force navigation even if there's an error
+      navigate('/login', { replace: true });
     }
   };
 
   const canModify = (resourceOwnerId: string) => {
     try {
-      if (!user) return false;
-      return user.id === resourceOwnerId;
+      if (!user || !resourceOwnerId) return false;
+      
+      // Sanitize inputs
+      const sanitizedUserId = sanitizeText(user.id);
+      const sanitizedResourceId = sanitizeText(resourceOwnerId);
+      
+      return sanitizedUserId === sanitizedResourceId;
     } catch (error) {
       console.error('Error checking permissions:', error);
       return false;
@@ -203,71 +291,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-function getDefaultAvatar(role: string): string {
-  const lowerRole = role.toLowerCase();
-  if (lowerRole.includes('team') || lowerRole.includes('club')) {
-    return 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg';
-  }
-  if (lowerRole.includes('coach') || lowerRole.includes('trainer')) {
-    return 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg';
-  }
-  return 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg';
-}
-
-function getDefaultCoverImage(role: string): string {
-  const lowerRole = role.toLowerCase();
-  if (lowerRole.includes('team') || lowerRole.includes('club')) {
-    return 'https://images.pexels.com/photos/869258/pexels-photo-869258.jpeg';
-  }
-  if (lowerRole.includes('coach') || lowerRole.includes('trainer')) {
-    return 'https://images.pexels.com/photos/2277981/pexels-photo-2277981.jpeg';
-  }
-  return 'https://images.pexels.com/photos/3076509/pexels-photo-3076509.jpeg';
-}
-
-function getDefaultSport(role: string): string {
-  const lowerRole = role.toLowerCase();
-  if (lowerRole.includes('nutritionist')) return 'Nutrition & Wellness';
-  if (lowerRole.includes('physiotherapist') || lowerRole.includes('physio')) return 'Sports Medicine';
-  if (lowerRole.includes('psychologist')) return 'Mental Performance';
-  if (lowerRole.includes('journalist')) return 'Sports Media';
-  if (lowerRole.includes('agent')) return 'Athlete Representation';
-  return 'General Sports';
-}
-
-function getBioByRole(role: string): string {
-  const lowerRole = role.toLowerCase();
-  if (lowerRole.includes('team') || lowerRole.includes('club')) {
-    return 'Building champions through teamwork, dedication, and sporting excellence.';
-  }
-  if (lowerRole.includes('coach') || lowerRole.includes('trainer')) {
-    return 'Experienced coach committed to developing talent and achieving success.';
-  }
-  if (lowerRole.includes('nutritionist')) {
-    return 'Sports nutrition specialist helping athletes optimize their performance through proper nutrition.';
-  }
-  if (lowerRole.includes('physiotherapist') || lowerRole.includes('physio')) {
-    return 'Sports physiotherapist dedicated to injury prevention and rehabilitation for athletes.';
-  }
-  if (lowerRole.includes('psychologist')) {
-    return 'Sports psychologist focused on mental performance and athlete wellbeing.';
-  }
-  if (lowerRole.includes('journalist')) {
-    return 'Sports journalist covering the latest news and stories in the sports world.';
-  }
-  if (lowerRole.includes('agent')) {
-    return 'Sports agent representing athletes and helping them achieve their career goals.';
-  }
-  return 'Passionate professional dedicated to excellence and continuous improvement in sports.';
-}
-
-function shouldHaveCertifications(role: string): boolean {
-  const lowerRole = role.toLowerCase();
-  return lowerRole.includes('coach') || lowerRole.includes('trainer') || 
-         lowerRole.includes('nutritionist') || lowerRole.includes('physiotherapist') ||
-         lowerRole.includes('psychologist') || lowerRole.includes('therapist');
 }
 
 export function useAuth() {
