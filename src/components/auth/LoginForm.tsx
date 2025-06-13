@@ -6,19 +6,18 @@ import { validateEmail, sanitizeText } from '../../utils';
 import { ERROR_MESSAGES } from '../../constants';
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string, remember: boolean) => void;
+  onSubmit: (email: string, password: string, remember: boolean) => Promise<void>;
   prefillEmail?: string;
-  error?: string | null;
   isBlocked?: boolean;
   blockTimeLeft?: number;
 }
 
-export function LoginForm({ onSubmit, prefillEmail = '', error, isBlocked, blockTimeLeft }: LoginFormProps) {
+export function LoginForm({ onSubmit, prefillEmail = '', isBlocked, blockTimeLeft }: LoginFormProps) {
   const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Update email when prefillEmail changes
@@ -26,9 +25,9 @@ export function LoginForm({ onSubmit, prefillEmail = '', error, isBlocked, block
     setEmail(prefillEmail);
   }, [prefillEmail]);
 
-  // Clear local error when inputs change
+  // Clear error when inputs change
   useEffect(() => {
-    setLocalError(null);
+    setError(null);
   }, [email, password]);
 
   const validateForm = (): string | null => {
@@ -58,12 +57,12 @@ export function LoginForm({ onSubmit, prefillEmail = '', error, isBlocked, block
 
     const validationError = validateForm();
     if (validationError) {
-      setLocalError(validationError);
+      setError(validationError);
       return;
     }
 
     setIsSubmitting(true);
-    setLocalError(null);
+    setError(null);
 
     try {
       // Sanitize inputs
@@ -71,8 +70,9 @@ export function LoginForm({ onSubmit, prefillEmail = '', error, isBlocked, block
       const sanitizedPassword = password; // Don't sanitize password as it may contain special chars
 
       await onSubmit(sanitizedEmail, sanitizedPassword, remember);
-    } catch (err) {
-      // Error is handled by parent component
+    } catch (err: any) {
+      // Handle the error from the parent component
+      setError(err.message || 'Invalid email or password');
     } finally {
       setIsSubmitting(false);
     }
@@ -94,8 +94,6 @@ export function LoginForm({ onSubmit, prefillEmail = '', error, isBlocked, block
     }
   };
 
-  const displayError = error || localError;
-
   return (
     <motion.form 
       onSubmit={handleSubmit} 
@@ -104,13 +102,13 @@ export function LoginForm({ onSubmit, prefillEmail = '', error, isBlocked, block
       animate={{ opacity: 1 }}
       transition={{ delay: 0.2 }}
     >
-      {displayError && (
+      {error && (
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-500 text-sm"
         >
-          {displayError}
+          {error}
         </motion.div>
       )}
       
@@ -127,7 +125,7 @@ export function LoginForm({ onSubmit, prefillEmail = '', error, isBlocked, block
             required
             aria-label="Email address"
             className={`w-full pl-10 pr-4 py-3 bg-dark-lighter border ${
-              displayError ? 'border-red-500' : 'border-dark-light'
+              error ? 'border-red-500' : 'border-dark-light'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent
             transition-all duration-200 text-white placeholder-gray-400 ${
               (isBlocked || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''
@@ -147,7 +145,7 @@ export function LoginForm({ onSubmit, prefillEmail = '', error, isBlocked, block
             required
             aria-label="Password"
             className={`w-full pl-10 pr-12 py-3 bg-dark-lighter border ${
-              displayError ? 'border-red-500' : 'border-dark-light'
+              error ? 'border-red-500' : 'border-dark-light'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent
             transition-all duration-200 text-white placeholder-gray-400 ${
               (isBlocked || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''
