@@ -11,7 +11,7 @@ interface Connection {
   name: string;
   role: string;
   avatar: string;
-  mutualConnections?: number;
+  mutualConnections: number;
 }
 
 interface SuggestedConnectionsProps {
@@ -21,12 +21,8 @@ interface SuggestedConnectionsProps {
 export function SuggestedConnections({ connections }: SuggestedConnectionsProps) {
   const navigate = useNavigate();
   const [dismissedUsers, setDismissedUsers] = React.useState<string[]>([]);
-  const [connectedUsers, setConnectedUsers] = React.useState<Set<string>>(new Set());
 
   const handleConnect = (id: string) => {
-    setConnectedUsers(prev => new Set([...prev, id]));
-    
-    // In a real app, this would call an API to create a connection request
     console.log('Connected to user:', id);
   };
 

@@ -7,8 +7,6 @@ import clsx from 'clsx';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { MediaGrid } from '../ui/MediaGrid';
 import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
-import { postService } from '../../services/postService';
-import { profileService } from '../../services/profileService';
 
 interface Comment {
   id: string;
@@ -60,16 +58,9 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
 
   const isOwnPost = post.author.id === currentUserId;
 
-  const handleLike = async () => {
-    try {
-      if (!currentUserId) return;
-      
-      const result = await postService.likePost(currentUserId, post.id);
-      setLiked(result.liked);
-      setLikesCount(prev => result.liked ? prev + 1 : prev - 1);
-    } catch (error) {
-      console.error('Error liking post:', error);
-    }
+  const handleLike = () => {
+    setLiked(!liked);
+    setLikesCount(prev => liked ? prev - 1 : prev + 1);
   };
 
   const handleViewProfile = (e: React.MouseEvent) => {
@@ -79,52 +70,35 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
 
   const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!currentUserId) return;
-    
     setIsFollowLoading(true);
     
-    try {
-      if (!isFollowing) {
-        await profileService.sendConnectionRequest(currentUserId, post.author.id);
-      }
-      // In a real app, there would be an API call to unfollow as well
-      
-      setIsFollowing(!isFollowing);
-    } catch (error) {
-      console.error('Error following user:', error);
-    } finally {
-      setIsFollowLoading(false);
-    }
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    setIsFollowing(!isFollowing);
+    setIsFollowLoading(false);
   };
 
-  const handleAddComment = async (e: React.FormEvent) => {
+  const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !currentUserId) return;
+    if (!newComment.trim()) return;
 
-    try {
-      const comment = await postService.addComment(currentUserId, post.id, newComment.trim());
-      
-      const formattedComment: Comment = {
-        id: comment.id,
-        content: comment.content,
-        author: {
-          id: comment.author_id,
-          name: comment.author?.full_name || 'User',
-          avatar: comment.author?.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-        },
-        timestamp: new Date(comment.created_at)
-      };
+    const comment: Comment = {
+      id: Date.now().toString(),
+      content: newComment.trim(),
+      author: {
+        id: currentUserId,
+        name: 'You',
+        avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
+      },
+      timestamp: new Date()
+    };
 
-      setComments(prev => [...prev, formattedComment]);
-      setCommentsCount(prev => prev + 1);
-      setNewComment('');
-    } catch (error) {
-      console.error('Error adding comment:', error);
-    }
+    setComments(prev => [...prev, comment]);
+    setCommentsCount(prev => prev + 1);
+    setNewComment('');
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    // This would be a real API call in production
+  const handleDeleteComment = (commentId: string) => {
     setComments(prev => prev.filter(comment => comment.id !== commentId));
     setCommentsCount(prev => prev - 1);
   };
@@ -152,34 +126,6 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showPostMenu]);
-
-  useEffect(() => {
-    // Load comments when comment section is opened
-    if (showComments && comments.length === 0) {
-      const loadComments = async () => {
-        try {
-          const commentsData = await postService.getComments(post.id);
-          
-          const formattedComments: Comment[] = commentsData.map((comment: any) => ({
-            id: comment.id,
-            content: comment.content,
-            author: {
-              id: comment.author_id,
-              name: comment.author?.full_name || 'User',
-              avatar: comment.author?.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-            },
-            timestamp: new Date(comment.created_at)
-          }));
-          
-          setComments(formattedComments);
-        } catch (error) {
-          console.error('Error loading comments:', error);
-        }
-      };
-      
-      loadComments();
-    }
-  }, [showComments, post.id, comments.length]);
 
   const mediaItems = post.media?.map((media, index) => ({
     id: `${post.id}-${index}`,
@@ -371,7 +317,7 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
 
           <form onSubmit={handleAddComment} className="flex items-center space-x-2">
             <img
-              src={currentUserId ? "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg" : "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"}
+              src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"
               alt="Your avatar"
               className="w-8 h-8 rounded-full object-cover flex-shrink-0"
             />
