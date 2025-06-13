@@ -41,7 +41,7 @@ class AuthService {
       }
 
       // Sanitize inputs
-      const sanitizedEmail = sanitizeText(email.toLowerCase());
+      const sanitizedEmail = sanitizeText(email.toLowerCase().trim());
       const sanitizedFullName = sanitizeText(fullName);
       const sanitizedRole = sanitizeText(role);
 
@@ -116,28 +116,52 @@ class AuthService {
   async signIn({ email, password }: SignInData): Promise<User> {
     try {
       // Validate inputs
-      if (!validateEmail(email)) {
-        throw new Error(ERROR_MESSAGES.INVALID_EMAIL);
+      if (!email || !password) {
+        throw new Error('Email and password are required');
       }
 
-      const sanitizedEmail = sanitizeText(email.toLowerCase());
+      // Clean and validate email
+      const cleanEmail = email.toLowerCase().trim();
+      if (!validateEmail(cleanEmail)) {
+        throw new Error('Please enter a valid email address');
+      }
 
-      // Sign in with Supabase Auth
+      // Don't sanitize password as it may contain special characters
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+
+      console.log('Attempting sign in with email:', cleanEmail);
+
+      // Sign in with Supabase Auth - use the clean email directly
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: sanitizedEmail,
+        email: cleanEmail,
         password: password
       });
 
       if (authError) {
-        throw new Error(authError.message);
+        console.error('Supabase auth error:', authError);
+        
+        // Provide more user-friendly error messages
+        if (authError.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid email or password. Please check your credentials and try again.');
+        } else if (authError.message.includes('Email not confirmed')) {
+          throw new Error('Please check your email and click the confirmation link before signing in.');
+        } else if (authError.message.includes('Too many requests')) {
+          throw new Error('Too many login attempts. Please wait a few minutes before trying again.');
+        } else {
+          throw new Error(authError.message);
+        }
       }
 
       if (!authData.user) {
-        throw new Error('Authentication failed');
+        throw new Error('Authentication failed - no user data received');
       }
 
+      console.log('Sign in successful for user:', authData.user.id);
+
       // Update last login
-      await supabase
+      const { error: updateError } = await supabase
         .from('users')
         .update({ 
           last_login: new Date().toISOString(),
@@ -146,19 +170,31 @@ class AuthService {
         })
         .eq('id', authData.user.id);
 
+      if (updateError) {
+        console.warn('Failed to update last login:', updateError);
+      }
+
       // Get user profile
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', authData.user.id)
         .single();
 
+      if (profileError) {
+        console.warn('Failed to fetch profile:', profileError);
+      }
+
       // Get user role from users table
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('role')
         .eq('id', authData.user.id)
         .single();
+
+      if (userError) {
+        console.warn('Failed to fetch user role:', userError);
+      }
 
       return {
         id: authData.user.id,
@@ -173,7 +209,7 @@ class AuthService {
       };
     } catch (error: any) {
       console.error('Sign in error:', error);
-      throw new Error(error.message || 'Authentication failed');
+      throw error; // Re-throw the error as-is to preserve the message
     }
   }
 
@@ -230,12 +266,13 @@ class AuthService {
 
   async resetPassword(email: string): Promise<void> {
     try {
-      if (!validateEmail(email)) {
+      const cleanEmail = email.toLowerCase().trim();
+      if (!validateEmail(cleanEmail)) {
         throw new Error(ERROR_MESSAGES.INVALID_EMAIL);
       }
 
       const { error } = await supabase.auth.resetPasswordForEmail(
-        sanitizeText(email.toLowerCase()),
+        cleanEmail,
         {
           redirectTo: `${window.location.origin}/reset-password`
         }
