@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Users, GraduationCap, Mail, Lock, UserCircle, Plus, X, Eye, EyeOff } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { validateEmail, validatePassword, sanitizeText } from '../../utils';
 import { ERROR_MESSAGES, NAME_MAX_LENGTH } from '../../constants';
 import { useAuth } from '../../context/AuthContext';
