@@ -623,6 +623,10 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        <div className="mt-6">
+          <SuggestedConnections connections={connections} />
+        </div>
       </div>
 
       {/* Desktop Layout */}
@@ -848,7 +852,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Sidebar - Desktop Only */}
+          {/* Right Sidebar */}
           <div className="col-span-3 space-y-6">
             <SuggestedConnections connections={connections} />
           </div>
