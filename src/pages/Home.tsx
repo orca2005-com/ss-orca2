@@ -310,6 +310,68 @@ export default function Home() {
           </button>
         </div>
 
+        {/* Compact Suggested Connections - Mobile Only */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-dark-lighter rounded-xl p-4"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-white">Suggested for you</h3>
+            <span className="text-xs text-gray-400 bg-dark px-2 py-1 rounded-full">
+              {connections.length}
+            </span>
+          </div>
+          
+          <div className="flex space-x-3 overflow-x-auto pb-2">
+            {connections.map((connection, index) => (
+              <motion.div
+                key={connection.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 * index }}
+                className="flex-shrink-0 bg-dark rounded-lg p-3 w-32"
+              >
+                <div className="text-center">
+                  <button
+                    onClick={() => navigate(`/profile/${connection.id}`)}
+                    className="block mx-auto mb-2 hover:scale-105 transition-transform"
+                  >
+                    <img
+                      src={connection.avatar}
+                      alt={connection.name}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-dark-light hover:border-accent transition-colors"
+                    />
+                  </button>
+                  <h4 className="text-xs font-medium text-white truncate mb-1">{connection.name}</h4>
+                  <p className="text-xs text-gray-400 truncate mb-2">{connection.role}</p>
+                  <button className="w-full bg-accent text-white text-xs py-1.5 rounded-md hover:bg-accent-dark transition-colors font-medium">
+                    Connect
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+            
+            {/* See More Card */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 * connections.length }}
+              className="flex-shrink-0 bg-dark rounded-lg p-3 w-32"
+            >
+              <div className="text-center h-full flex flex-col justify-center">
+                <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-2">
+                  <Plus className="w-6 h-6 text-accent" />
+                </div>
+                <button className="text-xs text-accent font-medium hover:text-accent-light transition-colors">
+                  See More
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+
         {/* Create Post */}
         <div className="bg-dark-lighter rounded-xl overflow-hidden">
           <div className="p-4 space-y-4">
@@ -532,10 +594,6 @@ export default function Home() {
               {removedPosts.size > 0 ? 'No more posts to show' : 'No posts to show'}
             </div>
           )}
-        </div>
-
-        <div className="mt-6">
-          <SuggestedConnections connections={connections} />
         </div>
       </div>
 
