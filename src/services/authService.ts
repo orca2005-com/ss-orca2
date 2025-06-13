@@ -40,24 +40,27 @@ class AuthService {
         throw new Error(passwordValidation.errors[0] || ERROR_MESSAGES.WEAK_PASSWORD);
       }
 
-      // Sanitize inputs
-      const sanitizedEmail = sanitizeText(email.toLowerCase().trim());
-      const sanitizedFullName = sanitizeText(fullName);
-      const sanitizedRole = sanitizeText(role);
+      // Clean inputs (minimal sanitization to preserve functionality)
+      const cleanEmail = email.toLowerCase().trim();
+      const cleanFullName = fullName.trim();
+      const cleanRole = role.trim();
 
-      // Sign up with Supabase Auth
+      console.log('Starting signup process for:', cleanEmail);
+
+      // Sign up with Supabase Auth first
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: sanitizedEmail,
+        email: cleanEmail,
         password: password,
         options: {
           data: {
-            full_name: sanitizedFullName,
-            role: sanitizedRole
+            full_name: cleanFullName,
+            role: cleanRole
           }
         }
       });
 
       if (authError) {
+        console.error('Supabase auth signup error:', authError);
         throw new Error(authError.message);
       }
 
@@ -65,13 +68,18 @@ class AuthService {
         throw new Error('Failed to create user account');
       }
 
+      console.log('Auth user created successfully:', authData.user.id);
+
+      // Wait a moment for the auth user to be fully created
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Create user record in users table
       const { error: userError } = await supabase
         .from('users')
         .insert({
           id: authData.user.id,
-          email: sanitizedEmail,
-          role: sanitizedRole,
+          email: cleanEmail,
+          role: cleanRole,
           status: 'active'
         });
 
@@ -80,13 +88,13 @@ class AuthService {
         // Don't throw here as auth user is already created
       }
 
-      // Create profile record
+      // Create profile record with proper user context
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
           user_id: authData.user.id,
-          full_name: sanitizedFullName,
-          display_name: sanitizedFullName.split(' ')[0],
+          full_name: cleanFullName,
+          display_name: cleanFullName.split(' ')[0],
           is_private: false,
           privacy_settings: {
             profile_visibility: 'public',
@@ -97,14 +105,17 @@ class AuthService {
 
       if (profileError) {
         console.error('Error creating profile:', profileError);
+        throw new Error('Failed to create user profile: ' + profileError.message);
       }
+
+      console.log('Profile created successfully');
 
       return {
         id: authData.user.id,
-        email: sanitizedEmail,
-        role: sanitizedRole,
+        email: cleanEmail,
+        role: cleanRole,
         profile: {
-          full_name: sanitizedFullName
+          full_name: cleanFullName
         }
       };
     } catch (error: any) {
