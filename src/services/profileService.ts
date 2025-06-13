@@ -47,12 +47,6 @@ class ProfileService {
 
   async updateProfile(userId: string, profileData: ProfileData) {
     try {
-      // Get current user to ensure they're authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.id !== userId) {
-        throw new Error('Unauthorized: Cannot update another user\'s profile');
-      }
-
       // Sanitize inputs
       const sanitizedData = {
         full_name: sanitizeText(profileData.full_name),
@@ -75,7 +69,6 @@ class ProfileService {
         .single();
 
       if (error) {
-        console.error('Profile update error:', error);
         throw new Error(error.message);
       }
 
@@ -88,12 +81,6 @@ class ProfileService {
 
   async uploadAvatar(userId: string, file: File): Promise<string> {
     try {
-      // Ensure user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.id !== userId) {
-        throw new Error('Unauthorized: Cannot upload avatar for another user');
-      }
-
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/avatar.${fileExt}`;
 
@@ -118,12 +105,6 @@ class ProfileService {
 
   async uploadCoverImage(userId: string, file: File): Promise<string> {
     try {
-      // Ensure user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.id !== userId) {
-        throw new Error('Unauthorized: Cannot upload cover image for another user');
-      }
-
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/cover.${fileExt}`;
 
@@ -167,12 +148,6 @@ class ProfileService {
 
   async addAchievement(userId: string, achievement: Achievement) {
     try {
-      // Ensure user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.id !== userId) {
-        throw new Error('Unauthorized: Cannot add achievement for another user');
-      }
-
       const sanitizedAchievement = {
         user_id: userId,
         title: sanitizeText(achievement.title),

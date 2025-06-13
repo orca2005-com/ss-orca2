@@ -68,10 +68,9 @@ npm install
    - Copy and run the contents of `supabase/migrations/001_initial_schema.sql`
    - Copy and run the contents of `supabase/migrations/002_storage_setup.sql`
 
-3. **Configure Authentication** (IMPORTANT):
-   - Go to Authentication > Settings in your Supabase dashboard
-   - **For Development**: Disable "Enable email confirmations" to allow immediate login after signup
-   - **For Production**: Keep email confirmations enabled and implement proper email verification flow
+3. **Configure Authentication**:
+   - Go to Authentication > Settings
+   - Disable email confirmations for development (optional)
    - Configure any social providers if needed
 
 4. **Set up Storage**:
@@ -96,13 +95,6 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:5173`
-
-## 🔧 Development Notes
-
-### Email Confirmation Setup
-- **Development Environment**: Disable email confirmations in Supabase Authentication settings for easier testing
-- **Production Environment**: Enable email confirmations and implement proper verification flow
-- If you encounter "Email not confirmed" errors during development, check your Supabase Authentication settings
 
 ## 📊 Database Schema
 

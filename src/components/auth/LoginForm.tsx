@@ -32,15 +32,15 @@ export function LoginForm({ onSubmit, prefillEmail = '', isBlocked, blockTimeLef
 
   const validateForm = (): string | null => {
     if (!email.trim()) {
-      return 'Email is required';
+      return ERROR_MESSAGES.REQUIRED_FIELD + ' (Email)';
     }
 
     if (!password.trim()) {
-      return 'Password is required';
+      return ERROR_MESSAGES.REQUIRED_FIELD + ' (Password)';
     }
 
-    if (!validateEmail(email.trim())) {
-      return 'Please enter a valid email address';
+    if (!validateEmail(email)) {
+      return ERROR_MESSAGES.INVALID_EMAIL;
     }
 
     if (password.length < 6) {
@@ -65,13 +65,14 @@ export function LoginForm({ onSubmit, prefillEmail = '', isBlocked, blockTimeLef
     setError(null);
 
     try {
-      // Clean the email but don't over-sanitize
-      const cleanEmail = email.trim().toLowerCase();
-      
-      await onSubmit(cleanEmail, password, remember);
+      // Sanitize inputs
+      const sanitizedEmail = sanitizeText(email.trim().toLowerCase());
+      const sanitizedPassword = password; // Don't sanitize password as it may contain special chars
+
+      await onSubmit(sanitizedEmail, sanitizedPassword, remember);
     } catch (err: any) {
       // Handle the error from the parent component
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.message || 'Invalid email or password');
     } finally {
       setIsSubmitting(false);
     }
@@ -79,7 +80,7 @@ export function LoginForm({ onSubmit, prefillEmail = '', isBlocked, blockTimeLef
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Prevent XSS by limiting input length
+    // Prevent XSS by limiting input length and sanitizing
     if (value.length <= 254) { // RFC 5321 email length limit
       setEmail(value);
     }

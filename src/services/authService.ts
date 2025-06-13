@@ -40,27 +40,24 @@ class AuthService {
         throw new Error(passwordValidation.errors[0] || ERROR_MESSAGES.WEAK_PASSWORD);
       }
 
-      // Clean inputs (minimal sanitization to preserve functionality)
-      const cleanEmail = email.toLowerCase().trim();
-      const cleanFullName = fullName.trim();
-      const cleanRole = role.trim();
+      // Sanitize inputs
+      const sanitizedEmail = sanitizeText(email.toLowerCase());
+      const sanitizedFullName = sanitizeText(fullName);
+      const sanitizedRole = sanitizeText(role);
 
-      console.log('Starting signup process for:', cleanEmail);
-
-      // Sign up with Supabase Auth first
+      // Sign up with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: cleanEmail,
+        email: sanitizedEmail,
         password: password,
         options: {
           data: {
-            full_name: cleanFullName,
-            role: cleanRole
+            full_name: sanitizedFullName,
+            role: sanitizedRole
           }
         }
       });
 
       if (authError) {
-        console.error('Supabase auth signup error:', authError);
         throw new Error(authError.message);
       }
 
@@ -68,18 +65,13 @@ class AuthService {
         throw new Error('Failed to create user account');
       }
 
-      console.log('Auth user created successfully:', authData.user.id);
-
-      // Wait a moment for the auth user to be fully created
-      await new Promise(resolve => setTimeout(resolve, 100));
-
       // Create user record in users table
       const { error: userError } = await supabase
         .from('users')
         .insert({
           id: authData.user.id,
-          email: cleanEmail,
-          role: cleanRole,
+          email: sanitizedEmail,
+          role: sanitizedRole,
           status: 'active'
         });
 
@@ -88,13 +80,13 @@ class AuthService {
         // Don't throw here as auth user is already created
       }
 
-      // Create profile record with proper user context
+      // Create profile record
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
           user_id: authData.user.id,
-          full_name: cleanFullName,
-          display_name: cleanFullName.split(' ')[0],
+          full_name: sanitizedFullName,
+          display_name: sanitizedFullName.split(' ')[0],
           is_private: false,
           privacy_settings: {
             profile_visibility: 'public',
@@ -105,17 +97,14 @@ class AuthService {
 
       if (profileError) {
         console.error('Error creating profile:', profileError);
-        throw new Error('Failed to create user profile: ' + profileError.message);
       }
-
-      console.log('Profile created successfully');
 
       return {
         id: authData.user.id,
-        email: cleanEmail,
-        role: cleanRole,
+        email: sanitizedEmail,
+        role: sanitizedRole,
         profile: {
-          full_name: cleanFullName
+          full_name: sanitizedFullName
         }
       };
     } catch (error: any) {
@@ -127,52 +116,28 @@ class AuthService {
   async signIn({ email, password }: SignInData): Promise<User> {
     try {
       // Validate inputs
-      if (!email || !password) {
-        throw new Error('Email and password are required');
+      if (!validateEmail(email)) {
+        throw new Error(ERROR_MESSAGES.INVALID_EMAIL);
       }
 
-      // Clean and validate email
-      const cleanEmail = email.toLowerCase().trim();
-      if (!validateEmail(cleanEmail)) {
-        throw new Error('Please enter a valid email address');
-      }
+      const sanitizedEmail = sanitizeText(email.toLowerCase());
 
-      // Don't sanitize password as it may contain special characters
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
-      }
-
-      console.log('Attempting sign in with email:', cleanEmail);
-
-      // Sign in with Supabase Auth - use the clean email directly
+      // Sign in with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
+        email: sanitizedEmail,
         password: password
       });
 
       if (authError) {
-        console.error('Supabase auth error:', authError);
-        
-        // Provide more user-friendly error messages
-        if (authError.message.includes('Invalid login credentials')) {
-          throw new Error('Invalid email or password. Please check your credentials and try again.');
-        } else if (authError.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email and click the confirmation link before signing in.');
-        } else if (authError.message.includes('Too many requests')) {
-          throw new Error('Too many login attempts. Please wait a few minutes before trying again.');
-        } else {
-          throw new Error(authError.message);
-        }
+        throw new Error(authError.message);
       }
 
       if (!authData.user) {
-        throw new Error('Authentication failed - no user data received');
+        throw new Error('Authentication failed');
       }
 
-      console.log('Sign in successful for user:', authData.user.id);
-
       // Update last login
-      const { error: updateError } = await supabase
+      await supabase
         .from('users')
         .update({ 
           last_login: new Date().toISOString(),
@@ -181,31 +146,19 @@ class AuthService {
         })
         .eq('id', authData.user.id);
 
-      if (updateError) {
-        console.warn('Failed to update last login:', updateError);
-      }
-
       // Get user profile
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', authData.user.id)
         .single();
 
-      if (profileError) {
-        console.warn('Failed to fetch profile:', profileError);
-      }
-
       // Get user role from users table
-      const { data: userData, error: userError } = await supabase
+      const { data: userData } = await supabase
         .from('users')
         .select('role')
         .eq('id', authData.user.id)
         .single();
-
-      if (userError) {
-        console.warn('Failed to fetch user role:', userError);
-      }
 
       return {
         id: authData.user.id,
@@ -220,7 +173,7 @@ class AuthService {
       };
     } catch (error: any) {
       console.error('Sign in error:', error);
-      throw error; // Re-throw the error as-is to preserve the message
+      throw new Error(error.message || 'Authentication failed');
     }
   }
 
@@ -277,13 +230,12 @@ class AuthService {
 
   async resetPassword(email: string): Promise<void> {
     try {
-      const cleanEmail = email.toLowerCase().trim();
-      if (!validateEmail(cleanEmail)) {
+      if (!validateEmail(email)) {
         throw new Error(ERROR_MESSAGES.INVALID_EMAIL);
       }
 
       const { error } = await supabase.auth.resetPasswordForEmail(
-        cleanEmail,
+        sanitizeText(email.toLowerCase()),
         {
           redirectTo: `${window.location.origin}/reset-password`
         }
