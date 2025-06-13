@@ -10,7 +10,9 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, unreadMessages, unreadNotifications } = useAuth();
+  const { user, signOut } = useAuth();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,11 +47,21 @@ export function Navbar() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   const menuItems = [
     { label: 'About Us', path: '/about' },
     { label: 'Contact Us', path: '/contact' },
     { label: 'Privacy Policy', path: '/privacy' },
     { label: 'Terms & Conditions', path: '/terms' },
+    { label: 'Logout', action: handleLogout }
   ];
 
   // Check if we're on a legal page
@@ -91,7 +103,7 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {!isLegalPage && [
+            {!isLegalPage && user && [
               { path: '/home', icon: Home, label: 'Home' },
               { path: '/search', icon: Search, label: 'Search' },
               { path: '/messages', icon: MessageCircle, label: 'Messages', count: unreadMessages },
@@ -176,18 +188,27 @@ export function Navbar() {
                   >
                     {menuItems.map((item, index) => (
                       <motion.div
-                        key={item.path}
+                        key={item.label}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <Link
-                          to={item.path}
-                          onClick={() => setIsMenuOpen(false)}
-                          className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200"
-                        >
-                          <span>{item.label}</span>
-                        </Link>
+                        {item.path ? (
+                          <Link
+                            to={item.path}
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200"
+                          >
+                            <span>{item.label}</span>
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={item.action}
+                            className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200 text-left"
+                          >
+                            <span>{item.label}</span>
+                          </button>
+                        )}
                       </motion.div>
                     ))}
                   </motion.div>
@@ -227,18 +248,27 @@ export function Navbar() {
                 >
                   {menuItems.map((item, index) => (
                     <motion.div
-                      key={item.path}
+                      key={item.label}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05 }}
                     >
-                      <Link
-                        to={item.path}
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200"
-                      >
-                        <span>{item.label}</span>
-                      </Link>
+                      {item.path ? (
+                        <Link
+                          to={item.path}
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200"
+                        >
+                          <span>{item.label}</span>
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={item.action}
+                          className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200 text-left"
+                        >
+                          <span>{item.label}</span>
+                        </button>
+                      )}
                     </motion.div>
                   ))}
                 </motion.div>

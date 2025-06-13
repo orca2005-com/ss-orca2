@@ -375,56 +375,58 @@ export function SignupForm() {
           </motion.button>
         </div>
 
-        {showCustomInput && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-3 space-y-3"
-          >
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={customRole}
-                onChange={(e) => setCustomRole(e.target.value.slice(0, 50))}
-                placeholder="Enter your role (e.g., Nutritionist, Sports Psychologist)"
-                disabled={isSubmitting}
-                maxLength={50}
-                className={`flex-1 px-4 py-2.5 md:py-3 bg-dark-lighter border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                onKeyPress={(e) => e.key === 'Enter' && !isSubmitting && handleCustomRoleSubmit()}
-              />
-              <button
-                type="button"
-                onClick={handleCustomRoleSubmit}
-                disabled={!customRole.trim() || isSubmitting}
-                className="px-4 py-2.5 md:py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Add
-              </button>
-            </div>
-
-            <div>
-              <p className="text-xs text-gray-400 mb-2">Popular roles:</p>
-              <div className="flex flex-wrap gap-2">
-                {suggestedCustomRoles.map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => !isSubmitting && handleSuggestedRoleClick(role)}
-                    disabled={isSubmitting}
-                    className={`px-3 py-1 text-xs bg-dark border border-dark-light rounded-full text-gray-300 hover:border-accent hover:text-accent transition-colors ${
-                      isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {role}
-                  </button>
-                ))}
+        <AnimatePresence>
+          {showCustomInput && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3 space-y-3"
+            >
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={customRole}
+                  onChange={(e) => setCustomRole(e.target.value.slice(0, 50))}
+                  placeholder="Enter your role (e.g., Nutritionist, Sports Psychologist)"
+                  disabled={isSubmitting}
+                  maxLength={50}
+                  className={`flex-1 px-4 py-2.5 md:py-3 bg-dark-lighter border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  onKeyPress={(e) => e.key === 'Enter' && !isSubmitting && handleCustomRoleSubmit()}
+                />
+                <button
+                  type="button"
+                  onClick={handleCustomRoleSubmit}
+                  disabled={!customRole.trim() || isSubmitting}
+                  className="px-4 py-2.5 md:py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add
+                </button>
               </div>
-            </div>
-          </motion.div>
-        )}
+
+              <div>
+                <p className="text-xs text-gray-400 mb-2">Popular roles:</p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedCustomRoles.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => !isSubmitting && handleSuggestedRoleClick(role)}
+                      disabled={isSubmitting}
+                      className={`px-3 py-1 text-xs bg-dark border border-dark-light rounded-full text-gray-300 hover:border-accent hover:text-accent transition-colors ${
+                        isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {selectedRole && !predefinedRoles.find(r => r.id === selectedRole) && (
           <motion.div

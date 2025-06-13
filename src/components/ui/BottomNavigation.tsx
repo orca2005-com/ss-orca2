@@ -7,7 +7,16 @@ import { useAuth } from '../../context/AuthContext';
 
 export function BottomNavigation() {
   const location = useLocation();
-  const { user, unreadMessages, unreadNotifications } = useAuth();
+  const { user } = useAuth();
+  const [unreadMessages, setUnreadMessages] = React.useState(0);
+  const [unreadNotifications, setUnreadNotifications] = React.useState(0);
+
+  // This would be replaced with real data from an API
+  React.useEffect(() => {
+    // Simulate fetching unread counts
+    setUnreadMessages(0);
+    setUnreadNotifications(0);
+  }, []);
 
   const navItems = [
     { path: '/home', icon: Home, label: 'Home' },

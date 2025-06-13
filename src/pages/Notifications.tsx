@@ -2,56 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Check, Trash2 } from 'lucide-react';
 import { NotificationItem } from '../components/notifications/NotificationItem';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
+import { useAuth } from '../context/AuthContext';
 
-const mockNotifications = [
-  {
-    id: '1',
-    type: 'like' as const,
-    user: {
-      name: 'Sarah Johnson',
-      avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg',
-    },
-    content: 'liked your recent achievement',
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-    isRead: false,
-  },
-  {
-    id: '2',
-    type: 'comment' as const,
-    user: {
-      name: 'John Smith',
-      avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg',
-    },
-    content: 'commented on your post',
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    isRead: true,
-  },
-  {
-    id: '3',
-    type: 'follow' as const,
-    user: {
-      name: 'Mike Rodriguez',
-      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg',
-    },
-    content: 'started following you',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60),
-    isRead: false,
-  }
-];
+// This would be replaced with real data from an API
+const getEmptyNotifications = () => [];
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState<typeof mockNotifications>([]);
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setNotifications(mockNotifications);
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        // This would be a real API call in production
+        const notificationsData = getEmptyNotifications();
+        setNotifications(notificationsData);
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    loadData();
-  }, []);
+    if (user) {
+      loadData();
+    }
+  }, [user]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -63,16 +41,25 @@ export default function Notifications() {
           : notification
       )
     );
+    
+    // This would be a real API call in production
+    // notificationService.markAsRead(id);
   };
 
   const handleMarkAllAsRead = () => {
     setNotifications(prev =>
       prev.map(notification => ({ ...notification, isRead: true }))
     );
+    
+    // This would be a real API call in production
+    // notificationService.markAllAsRead();
   };
 
   const handleDeleteNotification = (id: string) => {
     setNotifications(prev => prev.filter(notification => notification.id !== id));
+    
+    // This would be a real API call in production
+    // notificationService.deleteNotification(id);
   };
 
   if (isLoading) {
@@ -116,23 +103,24 @@ export default function Notifications() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            {notifications.map((notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                onMarkAsRead={handleMarkAsRead}
-                onDelete={handleDeleteNotification}
-              />
-            ))}
-            {notifications.length === 0 && (
-              <div className="text-center py-8">
-                <Bell className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mx-auto mb-4" />
-                <p className="text-sm md:text-base text-gray-400 mb-2">No notifications</p>
-                <p className="text-xs md:text-sm text-gray-500">You're all caught up!</p>
-              </div>
-            )}
-          </div>
+          {notifications.length > 0 ? (
+            <div className="space-y-3">
+              {notifications.map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={handleMarkAsRead}
+                  onDelete={handleDeleteNotification}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Bell className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mx-auto mb-4" />
+              <p className="text-sm md:text-base text-gray-400 mb-2">No notifications</p>
+              <p className="text-xs md:text-sm text-gray-500">You're all caught up!</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

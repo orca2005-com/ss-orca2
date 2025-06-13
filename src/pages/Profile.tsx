@@ -6,71 +6,93 @@ import { ProfileTabs } from '../components/profile/ProfileTabs';
 import { MutualConnections } from '../components/profile/MutualConnections';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { useAuth } from '../context/AuthContext';
-import { mockProfiles } from '../data/mockProfiles';
+import { profileService } from '../services/profileService';
 
 export default function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [profile, setProfile] = useState(mockProfiles[id || '']);
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const isOwnProfile = user?.id === id;
   const [isEditing, setIsEditing] = useState(false);
   const [mutualConnections, setMutualConnections] = useState([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [connections, setConnections] = useState<any[]>([]);
+
+  const isOwnProfile = user?.id === id;
 
   useEffect(() => {
     const loadProfile = async () => {
-      if (!id || !mockProfiles[id]) {
+      if (!id) {
         navigate('/home');
         return;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setProfile(mockProfiles[id]);
-      
-      const mockMutualConnections = Object.values(mockProfiles)
-        .filter(p => p.id !== id && p.id !== user?.id)
-        .slice(0, 3)
-        .map(p => ({
-          id: p.id,
-          name: p.name,
-          avatar: p.avatar,
-          role: p.role
-        }));
-      setMutualConnections(mockMutualConnections);
-      
-      setIsLoading(false);
-      setIsEditing(false);
+      try {
+        setIsLoading(true);
+        
+        // Get profile data
+        const profileData = await profileService.getProfile(id);
+        setProfile(profileData);
+        
+        // Get achievements
+        const achievementsData = await profileService.getAchievements(id);
+        setAchievements(achievementsData);
+        
+        // Get connections
+        const connectionsData = await profileService.getConnections(id);
+        setConnections(connectionsData);
+        
+        // Get mutual connections if not own profile
+        if (!isOwnProfile && user) {
+          // This would be a real API call in production
+          setMutualConnections([]);
+        }
+        
+        setIsLoading(false);
+        setIsEditing(false);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        setIsLoading(false);
+      }
     };
 
     loadProfile();
-  }, [id, navigate, user?.id]);
+  }, [id, navigate, user, isOwnProfile]);
 
-  const handleSaveProfile = (updatedProfile: any) => {
-    if (!isOwnProfile) return;
-    setProfile({ ...profile, ...updatedProfile });
-    setIsEditing(false);
+  const handleSaveProfile = async (updatedProfile: any) => {
+    if (!isOwnProfile || !user) return;
+    
+    try {
+      await profileService.updateProfile(user.id, updatedProfile);
+      setProfile({ ...profile, ...updatedProfile });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
   };
 
-  const handleUpdateAchievements = (achievements: string[]) => {
-    if (!isOwnProfile) return;
-    setProfile({ ...profile, achievements });
+  const handleUpdateAchievements = async (achievements: string[]) => {
+    if (!isOwnProfile || !user) return;
+    
+    try {
+      // This would be a real API call in production
+      setAchievements(achievements.map((title, index) => ({
+        id: `temp-${index}`,
+        title,
+        user_id: user.id
+      })));
+    } catch (error) {
+      console.error('Error updating achievements:', error);
+    }
   };
 
-  const handleUpdateCertifications = (certifications: string[]) => {
-    if (!isOwnProfile) return;
-    setProfile({ ...profile, certifications });
-  };
-
-  const handleUpdateConnections = (connections: any[]) => {
-    if (!isOwnProfile) return;
-    setProfile({ ...profile, connections });
-  };
-
-  const handleUpdatePosts = (posts: any[]) => {
-    if (!isOwnProfile) return;
-    setProfile({ ...profile, posts });
+  const handleUpdateCertifications = async (certifications: string[]) => {
+    if (!isOwnProfile || !user) return;
+    
+    // This would be a real API call in production
+    console.log('Updating certifications:', certifications);
   };
 
   const handleViewMutualConnection = (connectionId: string) => {
@@ -78,7 +100,8 @@ export default function Profile() {
   };
 
   const handleLogout = () => {
-    logout();
+    signOut();
+    navigate('/login');
   };
 
   if (isLoading) {
@@ -109,10 +132,53 @@ export default function Profile() {
     );
   }
 
+  // Format profile data for the EditableProfile component
+  const formattedProfile = {
+    id: profile.id,
+    name: profile.full_name,
+    role: profile.users?.role || 'player',
+    avatar: profile.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
+    coverImage: profile.cover_image_url || 'https://images.pexels.com/photos/3076509/pexels-photo-3076509.jpeg',
+    sport: profile.sport || '',
+    location: profile.location || '',
+    bio: profile.bio || '',
+    stats: {
+      followers: 0,
+      connections: connections.length || 0
+    },
+    externalLink: profile.website_url,
+    isPrivate: profile.is_private || false
+  };
+
+  // Format posts for the ProfileTabs component
+  const formattedPosts = posts.map(post => ({
+    id: post.id,
+    content: post.content,
+    status: post.status,
+    createdAt: new Date(post.created_at),
+    updatedAt: new Date(post.updated_at)
+  }));
+
+  // Format achievements for the ProfileTabs component
+  const formattedAchievements = achievements.map(achievement => achievement.title);
+
+  // Format connections for the ProfileTabs component
+  const formattedConnections = connections.map(connection => {
+    const isRequester = connection.requester_id === profile.user_id;
+    const otherUser = isRequester ? connection.addressee : connection.requester;
+    
+    return {
+      id: isRequester ? connection.addressee_id : connection.requester_id,
+      name: otherUser?.full_name || 'User',
+      role: 'Connection',
+      avatar: otherUser?.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
+    };
+  });
+
   return (
     <div className="min-h-screen bg-dark pb-8">
       <EditableProfile 
-        profile={profile} 
+        profile={formattedProfile} 
         onSave={handleSaveProfile}
         isEditing={isEditing}
         onEditingChange={setIsEditing}
@@ -123,21 +189,19 @@ export default function Profile() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
             <ProfileTabs
-              isPrivate={profile.isPrivate}
-              posts={profile.posts}
-              achievements={profile.achievements}
-              certifications={profile.certifications || []}
-              connections={profile.connections}
-              userRole={profile.role}
+              isPrivate={profile.is_private}
+              posts={formattedPosts}
+              achievements={formattedAchievements}
+              certifications={[]}
+              connections={formattedConnections}
+              userRole={profile.users?.role || 'player'}
               isEditing={isEditing && isOwnProfile}
               onUpdateAchievements={isOwnProfile ? handleUpdateAchievements : undefined}
               onUpdateCertifications={isOwnProfile ? handleUpdateCertifications : undefined}
-              onUpdateConnections={isOwnProfile ? handleUpdateConnections : undefined}
-              onUpdatePosts={isOwnProfile ? handleUpdatePosts : undefined}
             />
           </div>
           <div className="lg:col-span-1 space-y-4">
-            {!isOwnProfile && (
+            {!isOwnProfile && mutualConnections.length > 0 && (
               <MutualConnections
                 connections={mutualConnections}
                 onViewProfile={handleViewMutualConnection}

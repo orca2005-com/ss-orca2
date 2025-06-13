@@ -4,22 +4,21 @@ import { Camera, Upload, User, Users, GraduationCap, MapPin, Link as LinkIcon, T
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { useAuth } from '../context/AuthContext';
+import { profileService } from '../services/profileService';
 
 interface ProfileData {
   role: string;
-  name: string;
+  full_name: string;
   bio: string;
   sport: string;
   location: string;
-  website?: string;
+  website_url?: string;
   avatar?: File;
   banner?: File;
   achievements: string[];
   certifications?: string[];
-  teamSize?: number;
-  foundedYear?: number;
   position?: string;
-  experience?: string;
+  experience_years?: number;
 }
 
 export default function CreateProfile() {
@@ -30,7 +29,7 @@ export default function CreateProfile() {
   const [currentStep, setCurrentStep] = useState(1);
   const [profileData, setProfileData] = useState<ProfileData>({
     role: 'player',
-    name: '',
+    full_name: '',
     bio: '',
     sport: '',
     location: '',
@@ -40,19 +39,29 @@ export default function CreateProfile() {
   const [newAchievement, setNewAchievement] = useState('');
   const [newCertification, setNewCertification] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Get role from signup data or location state
+  // Get role from location state
   useEffect(() => {
-    const signupData = localStorage.getItem('signupData');
-    const roleFromState = location.state?.role;
-    
-    if (roleFromState) {
-      setProfileData(prev => ({ ...prev, role: roleFromState }));
-    } else if (signupData) {
-      const data = JSON.parse(signupData);
-      setProfileData(prev => ({ ...prev, role: data.role || 'player' }));
+    if (location.state?.role) {
+      setProfileData(prev => ({ ...prev, role: location.state.role }));
     }
-  }, [location.state]);
+    
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+    }
+    
+    // Pre-fill name if user exists
+    if (user?.profile?.full_name) {
+      setProfileData(prev => ({ 
+        ...prev, 
+        full_name: user.profile.full_name 
+      }));
+    }
+  }, [location.state, user]);
 
   const { getRootProps: getAvatarProps, getInputProps: getAvatarInputProps } = useDropzone({
     accept: { 'image/*': [] },
@@ -122,16 +131,47 @@ export default function CreateProfile() {
   };
 
   const handleSubmit = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Simulate profile creation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Clear signup data
-    localStorage.removeItem('signupData');
-    
-    // Navigate to home
-    navigate('/home');
+    try {
+      // Update profile
+      await profileService.updateProfile(user.id, {
+        full_name: profileData.full_name,
+        bio: profileData.bio,
+        sport: profileData.sport,
+        position: profileData.position,
+        location: profileData.location,
+        website_url: profileData.website_url,
+        is_private: false
+      });
+      
+      // Upload avatar if provided
+      if (profileData.avatar) {
+        await profileService.uploadAvatar(user.id, profileData.avatar);
+      }
+      
+      // Upload banner if provided
+      if (profileData.banner) {
+        await profileService.uploadCoverImage(user.id, profileData.banner);
+      }
+      
+      // Add achievements
+      for (const achievement of profileData.achievements) {
+        await profileService.addAchievement(user.id, { title: achievement });
+      }
+      
+      // Navigate to home
+      navigate('/home');
+    } catch (error) {
+      console.error('Error creating profile:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getRoleIcon = (role: string) => {
@@ -153,7 +193,7 @@ export default function CreateProfile() {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return profileData.name.trim() && profileData.sport.trim();
+        return profileData.full_name.trim() && profileData.sport.trim();
       case 2:
         return profileData.bio.trim() && profileData.location.trim();
       case 3:
@@ -187,6 +227,17 @@ export default function CreateProfile() {
           <p className="text-gray-400">
             Set up your {profileData.role} profile to connect with the sports community
           </p>
+          
+          {successMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-500 text-sm"
+            >
+              {successMessage}
+            </motion.div>
+          )}
         </div>
 
         {/* Progress Bar */}
@@ -238,8 +289,8 @@ export default function CreateProfile() {
                   </label>
                   <input
                     type="text"
-                    name="name"
-                    value={profileData.name}
+                    name="full_name"
+                    value={profileData.full_name}
                     onChange={handleInputChange}
                     placeholder={profileData.role.toLowerCase().includes('team') ? 'Enter team name' : 'Enter your full name'}
                     className="w-full px-4 py-3 bg-dark border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-white placeholder-gray-400"
@@ -276,37 +327,6 @@ export default function CreateProfile() {
                   </div>
                 )}
 
-                {profileData.role.toLowerCase().includes('team') && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Team Size
-                      </label>
-                      <input
-                        type="number"
-                        name="teamSize"
-                        value={profileData.teamSize || ''}
-                        onChange={handleInputChange}
-                        placeholder="Number of players"
-                        className="w-full px-4 py-3 bg-dark border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-white placeholder-gray-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Founded Year
-                      </label>
-                      <input
-                        type="number"
-                        name="foundedYear"
-                        value={profileData.foundedYear || ''}
-                        onChange={handleInputChange}
-                        placeholder="e.g., 2020"
-                        className="w-full px-4 py-3 bg-dark border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-white placeholder-gray-400"
-                      />
-                    </div>
-                  </div>
-                )}
-
                 {(profileData.role.toLowerCase().includes('coach') || 
                   profileData.role.toLowerCase().includes('trainer') ||
                   profileData.role.toLowerCase().includes('nutritionist') ||
@@ -316,11 +336,11 @@ export default function CreateProfile() {
                       Years of Experience
                     </label>
                     <input
-                      type="text"
-                      name="experience"
-                      value={profileData.experience || ''}
+                      type="number"
+                      name="experience_years"
+                      value={profileData.experience_years || ''}
                       onChange={handleInputChange}
-                      placeholder="e.g., 5 years, 10+ years"
+                      placeholder="e.g., 5"
                       className="w-full px-4 py-3 bg-dark border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-white placeholder-gray-400"
                     />
                   </div>
@@ -375,8 +395,8 @@ export default function CreateProfile() {
                     </label>
                     <input
                       type="url"
-                      name="website"
-                      value={profileData.website || ''}
+                      name="website_url"
+                      value={profileData.website_url || ''}
                       onChange={handleInputChange}
                       placeholder="https://yourwebsite.com"
                       className="w-full px-4 py-3 bg-dark border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-white placeholder-gray-400"
@@ -533,7 +553,7 @@ export default function CreateProfile() {
                 <div className="bg-dark p-4 rounded-lg">
                   <h3 className="text-white font-medium mb-2">Profile Preview</h3>
                   <div className="space-y-2 text-sm">
-                    <p><span className="text-gray-400">Name:</span> <span className="text-white">{profileData.name || 'Not set'}</span></p>
+                    <p><span className="text-gray-400">Name:</span> <span className="text-white">{profileData.full_name || 'Not set'}</span></p>
                     <p><span className="text-gray-400">Role:</span> <span className="text-white">{profileData.role}</span></p>
                     <p><span className="text-gray-400">Sport/Field:</span> <span className="text-white">{profileData.sport || 'Not set'}</span></p>
                     <p><span className="text-gray-400">Location:</span> <span className="text-white">{profileData.location || 'Not set'}</span></p>

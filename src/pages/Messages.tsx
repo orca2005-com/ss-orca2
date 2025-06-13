@@ -8,104 +8,35 @@ import { Input } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const mockChats = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg',
-    lastMessage: 'Great game yesterday!',
-    timestamp: new Date(),
-    unreadCount: 2,
-    isOnline: true,
-    isTyping: false,
-    lastSeen: new Date(),
-    participants: ['1', '3'],
-    isGroup: false,
-    messages: [
-      {
-        id: '1',
-        content: 'Hey, how was the game?',
-        timestamp: new Date(Date.now() - 3600000),
-        sender: {
-          id: '3',
-          name: 'Sarah Johnson',
-          avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
-        },
-        isRead: true
-      },
-      {
-        id: '2',
-        content: 'It was amazing! We won 3-1. The team played really well together.',
-        timestamp: new Date(Date.now() - 3500000),
-        sender: {
-          id: '1',
-          name: 'You',
-          avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-        },
-        isRead: true
-      },
-      {
-        id: '3',
-        content: 'That\'s awesome! I saw the highlights. Your goal in the second half was incredible!',
-        timestamp: new Date(Date.now() - 3400000),
-        sender: {
-          id: '3',
-          name: 'Sarah Johnson',
-          avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
-        },
-        isRead: true,
-        replyTo: {
-          id: '2',
-          content: 'It was amazing! We won 3-1. The team played really well together.',
-          sender: { name: 'You' }
-        }
-      },
-      {
-        id: '4',
-        content: 'Thanks! The coach has been working with us on those plays. Want to grab lunch tomorrow to celebrate?',
-        timestamp: new Date(Date.now() - 3300000),
-        sender: {
-          id: '1',
-          name: 'You',
-          avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-        },
-        isRead: true
-      },
-      {
-        id: '5',
-        content: 'Absolutely! How about that new sports bar downtown? I heard they have great food.',
-        timestamp: new Date(Date.now() - 1800000),
-        sender: {
-          id: '3',
-          name: 'Sarah Johnson',
-          avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
-        },
-        isRead: false
-      }
-    ]
-  }
-];
+// This would be replaced with real data from an API
+const getEmptyConversations = () => [];
 
 export default function Messages() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [selectedChat, setSelectedChat] = useState<typeof mockChats[0] | null>(null);
+  const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [chats, setChats] = useState<typeof mockChats>([]);
+  const [chats, setChats] = useState<any[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const userChats = mockChats.filter(chat => 
-        chat.participants.includes(user?.id || '')
-      );
-      setChats(userChats);
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        // This would be a real API call in production
+        const conversations = getEmptyConversations();
+        setChats(conversations);
+      } catch (error) {
+        console.error('Error loading conversations:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    loadData();
-  }, [user?.id]);
+    if (user) {
+      loadData();
+    }
+  }, [user]);
 
   const filteredChats = chats.filter(chat =>
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -115,7 +46,7 @@ export default function Messages() {
     e.stopPropagation();
     const chat = chats.find(c => c.id === chatId);
     if (chat) {
-      const otherParticipant = chat.participants.find(p => p !== user?.id);
+      const otherParticipant = chat.participants.find((p: string) => p !== user?.id);
       if (otherParticipant) {
         navigate(`/profile/${otherParticipant}`);
       }
@@ -126,7 +57,7 @@ export default function Messages() {
     if (selectedChat) {
       const updatedChat = {
         ...selectedChat,
-        messages: selectedChat.messages.filter(msg => msg.id !== messageId)
+        messages: selectedChat.messages.filter((msg: any) => msg.id !== messageId)
       };
       setSelectedChat(updatedChat);
       setChats(prev => prev.map(chat => 
@@ -222,47 +153,61 @@ export default function Messages() {
         </div>
 
         <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
-          <div className="divide-y divide-dark-light">
-            {filteredChats.map((chat) => (
-              <div
-                key={chat.id}
-                className={`w-full p-3 flex items-center space-x-3 hover:bg-dark transition-colors ultra-touch ${
-                  selectedChat?.id === chat.id ? 'bg-dark' : ''
-                }`}
-              >
-                <button
-                  onClick={(e) => handleChatProfileClick(chat.id, e)}
-                  className="relative flex-shrink-0 hover:scale-105 transition-transform"
+          {filteredChats.length > 0 ? (
+            <div className="divide-y divide-dark-light">
+              {filteredChats.map((chat) => (
+                <div
+                  key={chat.id}
+                  className={`w-full p-3 flex items-center space-x-3 hover:bg-dark transition-colors ultra-touch ${
+                    selectedChat?.id === chat.id ? 'bg-dark' : ''
+                  }`}
                 >
-                  <Avatar
-                    src={chat.avatar}
-                    alt={chat.name}
-                    size="md"
-                    showGroupIndicator={chat.isGroup}
-                  />
-                </button>
-                <button
-                  onClick={() => setSelectedChat(chat)}
-                  className="flex-1 min-w-0 text-left"
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-sm text-white truncate hover:text-accent transition-colors">{chat.name}</h3>
-                    <span className="text-xs text-gray-400 flex-shrink-0">
-                      {chat.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <button
+                    onClick={(e) => handleChatProfileClick(chat.id, e)}
+                    className="relative flex-shrink-0 hover:scale-105 transition-transform"
+                  >
+                    <Avatar
+                      src={chat.avatar}
+                      alt={chat.name}
+                      size="md"
+                      showGroupIndicator={chat.isGroup}
+                    />
+                  </button>
+                  <button
+                    onClick={() => setSelectedChat(chat)}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-sm text-white truncate hover:text-accent transition-colors">{chat.name}</h3>
+                      <span className="text-xs text-gray-400 flex-shrink-0">
+                        {chat.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <p className={`text-xs truncate ${chat.isTyping ? 'text-accent' : 'text-gray-400'}`}>
+                      {chat.isTyping ? 'Typing...' : chat.lastMessage}
+                    </p>
+                  </button>
+                  {chat.unreadCount > 0 && (
+                    <span className="bg-accent text-white text-xs rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
+                      {chat.unreadCount}
                     </span>
-                  </div>
-                  <p className={`text-xs truncate ${chat.isTyping ? 'text-accent' : 'text-gray-400'}`}>
-                    {chat.isTyping ? 'Typing...' : chat.lastMessage}
-                  </p>
-                </button>
-                {chat.unreadCount > 0 && (
-                  <span className="bg-accent text-white text-xs rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
-                    {chat.unreadCount}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+              <Users className="w-12 h-12 text-gray-600 mb-4" />
+              <p className="text-gray-400 mb-2">No conversations yet</p>
+              <p className="text-sm text-gray-500 mb-4">Connect with other users to start messaging</p>
+              <button 
+                onClick={() => navigate('/search')}
+                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors"
+              >
+                Find People
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -306,7 +251,17 @@ export default function Messages() {
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-            Select a chat to start messaging
+            <div className="text-center">
+              <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-xl text-gray-300 mb-2">Your Messages</p>
+              <p className="text-gray-400 mb-6">Connect with other users to start messaging</p>
+              <button 
+                onClick={() => navigate('/search')}
+                className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors"
+              >
+                Find People
+              </button>
+            </div>
           </div>
         )}
       </div>
