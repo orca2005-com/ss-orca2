@@ -8,7 +8,6 @@ import { CheckCircle } from 'lucide-react';
 export default function Login() {
   const { login } = useAuth();
   const location = useLocation();
-  const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [prefillEmail, setPrefillEmail] = useState<string>('');
   const [loginAttempts, setLoginAttempts] = useState(0);
@@ -44,31 +43,28 @@ export default function Login() {
   const handleLogin = async (email: string, password: string, remember: boolean) => {
     try {
       if (isBlocked) {
-        setError(`Too many attempts. Please try again in ${blockTimeLeft} seconds`);
-        return;
+        throw new Error(`Too many attempts. Please try again in ${blockTimeLeft} seconds`);
       }
 
-      setError(null);
-      
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        setError('Please enter a valid email address');
-        return;
+        throw new Error('Please enter a valid email address');
       }
 
       await login(email, password);
       setLoginAttempts(0);
-    } catch (err) {
+    } catch (err: any) {
       const newAttempts = loginAttempts + 1;
       setLoginAttempts(newAttempts);
       
       if (newAttempts >= 5) {
         setIsBlocked(true);
         setBlockTimeLeft(300); // 5 minutes block
-        setError('Too many failed attempts. Please try again in 5 minutes');
+        throw new Error('Too many failed attempts. Please try again in 5 minutes');
       } else {
-        setError('Invalid email or password');
+        // Let the error bubble up to LoginForm to handle
+        throw err;
       }
     }
   };
@@ -125,21 +121,9 @@ export default function Login() {
             )}
           </AnimatePresence>
 
-          {/* Error Message */}
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg"
-            >
-              <p className="text-red-400 text-sm text-center animate-shake">{error}</p>
-            </motion.div>
-          )}
-
           <LoginForm 
             onSubmit={handleLogin} 
             prefillEmail={prefillEmail}
-            error={error}
             isBlocked={isBlocked}
             blockTimeLeft={blockTimeLeft}
           />
