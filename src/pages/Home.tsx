@@ -395,7 +395,7 @@ export default function Home() {
                       </div>
                     ) : connectingUsers.has(connection.id) ? (
                       <div className="w-full bg-accent/20 text-accent text-xs py-1 rounded-md font-medium flex items-center justify-center">
-                        <div className="w-3 h-3 border border-accent border-t-transparent rounded-full animate-spin mr-1" />
+                        <div className="w-2.5 h-2.5 border border-accent border-t-transparent rounded-full animate-spin mr-1" />
                         <span>...</span>
                       </div>
                     ) : (

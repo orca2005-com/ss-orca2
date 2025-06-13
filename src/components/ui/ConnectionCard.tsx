@@ -120,7 +120,7 @@ export function ConnectionCard({
                 </Badge>
               ) : isConnecting ? (
                 <Badge variant="info">
-                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-1" />
+                  <div className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin mr-1" />
                   Connecting...
                 </Badge>
               ) : (

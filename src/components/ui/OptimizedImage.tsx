@@ -170,7 +170,7 @@ export function OptimizedImage({
               onError={() => setHasError(true)}
             />
           ) : (
-            <Loader className="w-6 h-6 text-accent animate-spin" />
+            <Loader className="w-4 h-4 text-accent animate-spin" />
           )}
         </div>
       )}
