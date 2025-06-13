@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Users, GraduationCap, Mail, Lock, UserCircle, Plus, X, Eye, EyeOff } from 'lucide-react';
+import { User, Users, GraduationCap, Mail, Lock, UserCircle, Plus, X, Eye, EyeOff, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { validateEmail, validatePassword, sanitizeText } from '../../utils';
 import { ERROR_MESSAGES, NAME_MAX_LENGTH } from '../../constants';
@@ -56,6 +56,27 @@ export function SignupForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+
+  // Handle rate limit countdown
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRateLimited && rateLimitCountdown > 0) {
+      interval = setInterval(() => {
+        setRateLimitCountdown((prev) => {
+          if (prev <= 1) {
+            setIsRateLimited(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRateLimited, rateLimitCountdown]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -157,10 +178,20 @@ export function SignupForm() {
     return null;
   };
 
+  const handleRateLimitError = (errorMessage: string) => {
+    // Extract seconds from rate limit message
+    const match = errorMessage.match(/(\d+)\s*seconds?/i);
+    const seconds = match ? parseInt(match[1], 10) : 60; // Default to 60 seconds if can't parse
+    
+    setIsRateLimited(true);
+    setRateLimitCountdown(seconds);
+    setError(`Too many signup attempts. Please wait ${seconds} seconds before trying again.`);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSubmitting) return;
+    if (isSubmitting || isRateLimited) return;
 
     const validationError = validateForm();
     if (validationError) {
@@ -196,10 +227,28 @@ export function SignupForm() {
         } 
       });
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred. Please try again.');
+      const errorMessage = err.message || 'An unexpected error occurred. Please try again.';
+      
+      // Check for rate limiting errors
+      if (errorMessage.includes('For security purposes') || 
+          errorMessage.includes('over_email_send_rate_limit') ||
+          errorMessage.includes('rate limit')) {
+        handleRateLimitError(errorMessage);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const formatCountdown = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins > 0) {
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${secs}s`;
   };
 
   return (
@@ -214,9 +263,23 @@ export function SignupForm() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-500 text-sm"
+          className={`border rounded-lg p-4 text-sm ${
+            isRateLimited 
+              ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500'
+              : 'bg-red-500/10 border-red-500/20 text-red-500'
+          }`}
         >
-          {error}
+          <div className="flex items-start space-x-2">
+            {isRateLimited && <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />}
+            <div className="flex-1">
+              {error}
+              {isRateLimited && rateLimitCountdown > 0 && (
+                <div className="mt-2 text-xs">
+                  Time remaining: <span className="font-mono font-bold">{formatCountdown(rateLimitCountdown)}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </motion.div>
       )}
 
@@ -229,7 +292,7 @@ export function SignupForm() {
             placeholder="Full Name"
             value={formData.fullName}
             onChange={handleInputChange}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRateLimited}
             autoComplete="name"
             required
             maxLength={NAME_MAX_LENGTH}
@@ -237,7 +300,7 @@ export function SignupForm() {
             className={`w-full pl-8 md:pl-10 pr-4 py-2.5 md:py-3 bg-dark-lighter border ${
               error && !formData.fullName.trim() ? 'border-red-500' : 'border-dark-light'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              isSubmitting || isRateLimited ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           />
         </div>
@@ -250,14 +313,14 @@ export function SignupForm() {
             placeholder="Email"
             value={formData.email}
             onChange={handleInputChange}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRateLimited}
             autoComplete="email"
             required
             aria-label="Email address"
             className={`w-full pl-8 md:pl-10 pr-4 py-2.5 md:py-3 bg-dark-lighter border ${
               error && (!formData.email.trim() || !validateEmail(formData.email)) ? 'border-red-500' : 'border-dark-light'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              isSubmitting || isRateLimited ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           />
         </div>
@@ -270,20 +333,20 @@ export function SignupForm() {
             placeholder="Password"
             value={formData.password}
             onChange={handleInputChange}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRateLimited}
             autoComplete="new-password"
             required
             aria-label="Password"
             className={`w-full pl-8 md:pl-10 pr-12 py-2.5 md:py-3 bg-dark-lighter border ${
               error && !validatePassword(formData.password).isValid ? 'border-red-500' : 'border-dark-light'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              isSubmitting || isRateLimited ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRateLimited}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
@@ -299,20 +362,20 @@ export function SignupForm() {
             placeholder="Confirm Password"
             value={formData.confirmPassword}
             onChange={handleInputChange}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRateLimited}
             autoComplete="new-password"
             required
             aria-label="Confirm password"
             className={`w-full pl-8 md:pl-10 pr-12 py-2.5 md:py-3 bg-dark-lighter border ${
               error && formData.password !== formData.confirmPassword ? 'border-red-500' : 'border-dark-light'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              isSubmitting || isRateLimited ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRateLimited}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
             aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
           >
@@ -330,14 +393,14 @@ export function SignupForm() {
               key={role.id}
               type="button"
               onClick={() => handleRoleSelect(role.id)}
-              disabled={isSubmitting}
-              whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-              whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+              disabled={isSubmitting || isRateLimited}
+              whileHover={{ scale: isSubmitting || isRateLimited ? 1 : 1.02 }}
+              whileTap={{ scale: isSubmitting || isRateLimited ? 1 : 0.98 }}
               className={`relative overflow-hidden group p-4 rounded-lg border transition-all duration-200 text-left ${
                 selectedRole === role.id
                   ? 'border-accent bg-accent/20'
                   : 'border-dark-light bg-dark-lighter hover:border-accent'
-              } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${isSubmitting || isRateLimited ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div className="flex items-center space-x-3">
                 <div className={`p-2 rounded-lg ${selectedRole === role.id ? 'bg-accent/30' : 'bg-dark'}`}>
@@ -354,14 +417,14 @@ export function SignupForm() {
           <motion.button
             type="button"
             onClick={() => handleRoleSelect('custom')}
-            disabled={isSubmitting}
-            whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-            whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+            disabled={isSubmitting || isRateLimited}
+            whileHover={{ scale: isSubmitting || isRateLimited ? 1 : 1.02 }}
+            whileTap={{ scale: isSubmitting || isRateLimited ? 1 : 0.98 }}
             className={`relative overflow-hidden group p-4 rounded-lg border transition-all duration-200 text-left ${
               showCustomInput
                 ? 'border-accent bg-accent/20'
                 : 'border-dark-light bg-dark-lighter hover:border-accent'
-            } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            } ${isSubmitting || isRateLimited ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <div className="flex items-center space-x-3">
               <div className={`p-2 rounded-lg ${showCustomInput ? 'bg-accent/30' : 'bg-dark'}`}>
@@ -389,17 +452,17 @@ export function SignupForm() {
                   value={customRole}
                   onChange={(e) => setCustomRole(e.target.value.slice(0, 50))}
                   placeholder="Enter your role (e.g., Nutritionist, Sports Psychologist)"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isRateLimited}
                   maxLength={50}
                   className={`flex-1 px-4 py-2.5 md:py-3 bg-dark-lighter border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                    isSubmitting || isRateLimited ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
-                  onKeyPress={(e) => e.key === 'Enter' && !isSubmitting && handleCustomRoleSubmit()}
+                  onKeyPress={(e) => e.key === 'Enter' && !isSubmitting && !isRateLimited && handleCustomRoleSubmit()}
                 />
                 <button
                   type="button"
                   onClick={handleCustomRoleSubmit}
-                  disabled={!customRole.trim() || isSubmitting}
+                  disabled={!customRole.trim() || isSubmitting || isRateLimited}
                   className="px-4 py-2.5 md:py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Add
@@ -413,10 +476,10 @@ export function SignupForm() {
                     <button
                       key={role}
                       type="button"
-                      onClick={() => !isSubmitting && handleSuggestedRoleClick(role)}
-                      disabled={isSubmitting}
+                      onClick={() => !isSubmitting && !isRateLimited && handleSuggestedRoleClick(role)}
+                      disabled={isSubmitting || isRateLimited}
                       className={`px-3 py-1 text-xs bg-dark border border-dark-light rounded-full text-gray-300 hover:border-accent hover:text-accent transition-colors ${
-                        isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                        isSubmitting || isRateLimited ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
                       {role}
@@ -446,9 +509,9 @@ export function SignupForm() {
                 setSelectedRole(null);
                 setCustomRole('');
               }}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isRateLimited}
               className={`text-gray-400 hover:text-gray-300 transition-colors ${
-                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                isSubmitting || isRateLimited ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
               <X className="w-4 h-4" />
@@ -459,15 +522,20 @@ export function SignupForm() {
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isRateLimited}
         className={`w-full bg-accent hover:bg-accent-dark text-white font-medium py-2.5 md:py-3 px-4 rounded-lg transition-colors duration-200 text-sm md:text-base flex items-center justify-center space-x-2 ${
-          isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+          isSubmitting || isRateLimited ? 'opacity-50 cursor-not-allowed' : ''
         }`}
       >
         {isSubmitting ? (
           <>
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             <span>Creating Account...</span>
+          </>
+        ) : isRateLimited ? (
+          <>
+            <Clock className="w-4 h-4" />
+            <span>Please wait {formatCountdown(rateLimitCountdown)}</span>
           </>
         ) : (
           <span>Create Account</span>
