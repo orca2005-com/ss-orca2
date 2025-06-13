@@ -65,7 +65,6 @@ export function ConnectionCard({
       transition={{ delay: index * 0.1, duration: 0.3 }}
     >
       <Card hover className="group relative">
-        {/* Dismiss Button */}
         {showDismiss && onDismiss && (
           <motion.button
             initial={{ opacity: 0 }}
@@ -80,7 +79,6 @@ export function ConnectionCard({
         )}
 
         <div className="flex items-start space-x-4">
-          {/* Avatar */}
           <Avatar
             src={connection.avatar}
             alt={connection.name}
@@ -89,7 +87,6 @@ export function ConnectionCard({
             priority={index < 2}
           />
 
-          {/* Content */}
           <div className="flex-1 min-w-0">
             <button
               onClick={handleViewProfile}
@@ -103,7 +100,6 @@ export function ConnectionCard({
               </p>
             </button>
 
-            {/* Mutual connections */}
             {showMutualConnections && connection.mutualConnections !== undefined && (
               <div className="mb-3">
                 <Badge variant="default" icon={Users} size="sm">
@@ -112,7 +108,6 @@ export function ConnectionCard({
               </div>
             )}
 
-            {/* Action Buttons */}
             <div className="flex items-center justify-between">
               {isConnected ? (
                 <Badge variant="success" icon={Check}>
@@ -134,7 +129,6 @@ export function ConnectionCard({
                 </Button>
               )}
 
-              {/* View Profile Link */}
               <Button
                 variant="ghost"
                 size="sm"

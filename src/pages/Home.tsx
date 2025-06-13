@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Filter, Image as ImageIcon, Send, X, Video, Plus, ChevronDown } from 'lucide-react';
 import { FeedItem } from '../components/feed/FeedItem';
-import { SuggestedConnections } from '../components/feed/SuggestedConnections';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { mockProfiles } from '../data/mockProfiles';
 import { useNavigate } from 'react-router-dom';
@@ -884,9 +883,9 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Sidebar */}
+          {/* Right Sidebar - Removed SuggestedConnections component */}
           <div className="col-span-3 space-y-6">
-            <SuggestedConnections connections={connections} />
+            {/* Empty for now - can add other widgets here */}
           </div>
         </div>
       </div>

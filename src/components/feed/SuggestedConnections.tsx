@@ -69,7 +69,6 @@ export function SuggestedConnections({ connections }: SuggestedConnectionsProps)
         </AnimatePresence>
       </div>
 
-      {/* See More Button */}
       {filteredConnections.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -81,6 +80,7 @@ export function SuggestedConnections({ connections }: SuggestedConnectionsProps)
             variant="outline"
             fullWidth
             size="sm"
+            onClick={() => navigate('/search')}
           >
             See More Suggestions
           </Button>
