@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Filter, Image as ImageIcon, Send, X, Video, Plus, ChevronDown, Users, UserPlus } from 'lucide-react';
+import { Filter, Image as ImageIcon, Send, X, Video, Plus, ChevronDown } from 'lucide-react';
 import { FeedItem } from '../components/feed/FeedItem';
 import { SuggestedConnections } from '../components/feed/SuggestedConnections';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
@@ -146,7 +146,6 @@ export default function Home() {
   const [lastPostTime, setLastPostTime] = useState<Date | null>(null);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [removedPosts, setRemovedPosts] = useState<Set<string>>(new Set());
-  const [showSuggestedConnections, setShowSuggestedConnections] = useState(false);
   const filterDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -318,128 +317,10 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Floating Suggested Connections Button */}
-        <div className="fixed bottom-24 right-4 z-40">
-          <motion.button
-            onClick={() => setShowSuggestedConnections(true)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-14 h-14 bg-accent hover:bg-accent-dark rounded-full flex items-center justify-center shadow-lg transition-colors relative"
-          >
-            <Users className="w-6 h-6 text-white" />
-            {connections.length > 0 && (
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-xs text-white font-bold">{connections.length}</span>
-              </div>
-            )}
-          </motion.button>
+        {/* Suggested Connections - Top Section */}
+        <div className="mt-6">
+          <SuggestedConnections connections={connections} />
         </div>
-
-        {/* Suggested Connections Modal */}
-        <AnimatePresence>
-          {showSuggestedConnections && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
-              onClick={() => setShowSuggestedConnections(false)}
-            >
-              <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 500 }}
-                className="w-full bg-dark-lighter rounded-t-2xl max-h-[80vh] overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="p-4 border-b border-dark-light">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Users className="w-5 h-5 text-accent" />
-                      <h2 className="text-lg font-semibold text-white">Suggested Connections</h2>
-                    </div>
-                    <button
-                      onClick={() => setShowSuggestedConnections(false)}
-                      className="p-2 text-gray-400 hover:text-white transition-colors ultra-touch"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <p className="text-sm text-gray-400 mt-1">Connect with professionals in your network</p>
-                </div>
-                
-                <div className="p-4 overflow-y-auto max-h-[60vh]">
-                  <div className="space-y-3">
-                    {connections.map((connection, index) => (
-                      <motion.div
-                        key={connection.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex items-center space-x-3 p-3 bg-dark rounded-xl hover:bg-dark-light transition-colors"
-                      >
-                        <img
-                          src={connection.avatar}
-                          alt={connection.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-white truncate">{connection.name}</h3>
-                          <p className="text-sm text-gray-400">{connection.role}</p>
-                          <p className="text-xs text-gray-500">{connection.mutualConnections} mutual connections</p>
-                        </div>
-                        <button className="px-4 py-2 bg-accent text-white text-sm rounded-lg hover:bg-accent-dark transition-colors ultra-touch">
-                          <UserPlus className="w-4 h-4" />
-                        </button>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Suggested Connections Card - Appears after 3 posts */}
-        {filteredPosts.length >= 3 && (
-          <div className="bg-gradient-to-r from-accent/10 to-blue-500/10 rounded-xl p-4 border border-accent/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-accent" />
-                <h3 className="text-base font-semibold text-white">Expand Your Network</h3>
-              </div>
-              <span className="text-xs text-accent bg-accent/20 px-2 py-1 rounded-full">
-                {connections.length} suggestions
-              </span>
-            </div>
-            <p className="text-sm text-gray-300 mb-3">
-              Connect with {connections.length} professionals who share your interests
-            </p>
-            <div className="flex items-center space-x-2 mb-3">
-              {connections.slice(0, 3).map((connection, index) => (
-                <img
-                  key={connection.id}
-                  src={connection.avatar}
-                  alt={connection.name}
-                  className="w-8 h-8 rounded-full object-cover border-2 border-accent/30"
-                  style={{ marginLeft: index > 0 ? '-8px' : '0' }}
-                />
-              ))}
-              {connections.length > 3 && (
-                <div className="w-8 h-8 rounded-full bg-accent/20 border-2 border-accent/30 flex items-center justify-center text-xs text-accent font-bold" style={{ marginLeft: '-8px' }}>
-                  +{connections.length - 3}
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => setShowSuggestedConnections(true)}
-              className="w-full py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors text-sm font-medium ultra-touch"
-            >
-              View All Suggestions
-            </button>
-          </div>
-        )}
 
         {/* Create Post */}
         <div className="bg-dark-lighter rounded-xl overflow-hidden">
@@ -649,50 +530,13 @@ export default function Home() {
         {/* Posts */}
         <div className="space-y-4">
           <AnimatePresence>
-            {filteredPosts.map((post, index) => (
-              <React.Fragment key={post.id}>
-                <FeedItem 
-                  post={post} 
-                  onRemovePost={handleRemovePost}
-                  currentUserId={user?.id}
-                />
-                {/* Insert suggested connections after every 5 posts */}
-                {(index + 1) % 5 === 0 && connections.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-r from-accent/5 to-blue-500/5 rounded-xl p-4 border border-accent/10"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <Users className="w-4 h-4 text-accent" />
-                        <h3 className="text-sm font-medium text-white">People you may know</h3>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3 overflow-x-auto pb-2">
-                      {connections.slice(0, 3).map((connection) => (
-                        <div key={connection.id} className="flex-shrink-0 text-center">
-                          <img
-                            src={connection.avatar}
-                            alt={connection.name}
-                            className="w-12 h-12 rounded-full object-cover mx-auto mb-2"
-                          />
-                          <p className="text-xs text-white font-medium truncate w-16">{connection.name.split(' ')[0]}</p>
-                          <button className="mt-1 px-2 py-1 bg-accent text-white text-xs rounded hover:bg-accent-dark transition-colors">
-                            Connect
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => setShowSuggestedConnections(true)}
-                      className="w-full mt-3 py-2 text-accent text-sm font-medium hover:text-accent-light transition-colors"
-                    >
-                      See all suggestions
-                    </button>
-                  </motion.div>
-                )}
-              </React.Fragment>
+            {filteredPosts.map((post) => (
+              <FeedItem 
+                key={post.id}
+                post={post} 
+                onRemovePost={handleRemovePost}
+                currentUserId={user?.id}
+              />
             ))}
           </AnimatePresence>
           {filteredPosts.length === 0 && (
