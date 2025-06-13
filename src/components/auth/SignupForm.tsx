@@ -4,6 +4,7 @@ import { User, Users, GraduationCap, Mail, Lock, UserCircle, Plus, X, Eye, EyeOf
 import { motion } from 'framer-motion';
 import { validateEmail, validatePassword, sanitizeText } from '../../utils';
 import { ERROR_MESSAGES, NAME_MAX_LENGTH } from '../../constants';
+import { useAuth } from '../../context/AuthContext';
 
 interface RoleCard {
   id: string;
@@ -41,6 +42,7 @@ const suggestedCustomRoles = [
 
 export function SignupForm() {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -184,20 +186,17 @@ export function SignupForm() {
         return;
       }
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await signUp(sanitizedData.email, sanitizedData.password, sanitizedData.fullName, sanitizedData.role);
       
-      // Store signup data securely
-      const signupDataToStore = {
-        fullName: sanitizedData.fullName,
-        email: sanitizedData.email,
-        role: sanitizedData.role
-      };
-      
-      localStorage.setItem('signupData', JSON.stringify(signupDataToStore));
-      navigate('/create-profile', { state: { role: sanitizedData.role } });
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      // Navigate to create profile page
+      navigate('/create-profile', { 
+        state: { 
+          role: sanitizedData.role,
+          message: 'Account created successfully! Please complete your profile.'
+        } 
+      });
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -469,7 +468,7 @@ export function SignupForm() {
             <span>Creating Account...</span>
           </>
         ) : (
-          <span>Continue to Profile Setup</span>
+          <span>Create Account</span>
         )}
       </button>
     </motion.form>

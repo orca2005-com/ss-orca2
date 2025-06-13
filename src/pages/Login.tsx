@@ -1,18 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/auth/LoginForm';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { signIn, user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [prefillEmail, setPrefillEmail] = useState<string>('');
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockTimeLeft, setBlockTimeLeft] = useState(0);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/home', { replace: true });
+    }
+  }, [user, navigate]);
 
   // Check for success message from signup
   useEffect(() => {
@@ -46,14 +54,11 @@ export default function Login() {
         throw new Error(`Too many attempts. Please try again in ${blockTimeLeft} seconds`);
       }
 
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      await login(email, password);
+      await signIn(email, password);
       setLoginAttempts(0);
+      
+      // Navigate to home page
+      navigate('/home', { replace: true });
     } catch (err: any) {
       const newAttempts = loginAttempts + 1;
       setLoginAttempts(newAttempts);
