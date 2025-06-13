@@ -7,16 +7,19 @@ export const BIO_MAX_LENGTH = 150;
 export const NAME_MAX_LENGTH = 100;
 export const LOCATION_MAX_LENGTH = 100;
 
-// Security constants
+// Enhanced security constants
 export const MAX_LOGIN_ATTEMPTS = 5;
 export const LOGIN_LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
 export const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 export const CSRF_TOKEN_LENGTH = 32;
+export const MAX_RETRY_ATTEMPTS = 3;
+export const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 
-// File type restrictions
+// Enhanced file type restrictions
 export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg'];
 export const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'text/plain'];
+export const BLOCKED_FILE_EXTENSIONS = ['.exe', '.bat', '.cmd', '.scr', '.pif', '.com', '.jar', '.js', '.vbs', '.php', '.asp', '.jsp'];
 
 export const STORAGE_KEYS = {
   AUTH_TOKEN: 'sportnet_auth_token',
@@ -43,7 +46,10 @@ export const ERROR_MESSAGES = {
   UPLOAD_FAILED: 'File upload failed. Please try again.',
   PERMISSION_DENIED: 'You do not have permission to perform this action.',
   CONTENT_BLOCKED: 'Content blocked for security reasons.',
-  MALICIOUS_CONTENT: 'Potentially malicious content detected.'
+  MALICIOUS_CONTENT: 'Potentially malicious content detected.',
+  INVALID_INPUT: 'Invalid input detected.',
+  SANITIZATION_FAILED: 'Input sanitization failed.',
+  SUSPICIOUS_ACTIVITY: 'Suspicious activity detected.'
 } as const;
 
 // API endpoints (for future use)
@@ -84,17 +90,19 @@ export const API_ENDPOINTS = {
   }
 } as const;
 
-// Rate limiting configurations
+// Enhanced rate limiting configurations
 export const RATE_LIMITS = {
   LOGIN: { requests: 5, windowMs: 15 * 60 * 1000 }, // 5 attempts per 15 minutes
   REGISTER: { requests: 3, windowMs: 60 * 60 * 1000 }, // 3 attempts per hour
   POST_CREATE: { requests: 10, windowMs: 60 * 1000 }, // 10 posts per minute
   MESSAGE_SEND: { requests: 30, windowMs: 60 * 1000 }, // 30 messages per minute
   FILE_UPLOAD: { requests: 5, windowMs: 60 * 1000 }, // 5 uploads per minute
-  PASSWORD_RESET: { requests: 3, windowMs: 60 * 60 * 1000 } // 3 attempts per hour
+  PASSWORD_RESET: { requests: 3, windowMs: 60 * 60 * 1000 }, // 3 attempts per hour
+  SEARCH: { requests: 100, windowMs: 60 * 1000 }, // 100 searches per minute
+  PROFILE_UPDATE: { requests: 10, windowMs: 60 * 1000 } // 10 updates per minute
 } as const;
 
-// Content Security Policy
+// Enhanced Content Security Policy
 export const CSP_DIRECTIVES = {
   DEFAULT_SRC: ["'self'"],
   SCRIPT_SRC: ["'self'", "'unsafe-inline'"],
@@ -106,10 +114,12 @@ export const CSP_DIRECTIVES = {
   FRAME_SRC: ["'none'"],
   OBJECT_SRC: ["'none'"],
   BASE_URI: ["'self'"],
-  FORM_ACTION: ["'self'"]
+  FORM_ACTION: ["'self'"],
+  FRAME_ANCESTORS: ["'none'"],
+  UPGRADE_INSECURE_REQUESTS: []
 } as const;
 
-// Feature flags
+// Enhanced feature flags
 export const FEATURES = {
   ENABLE_VIDEO_UPLOAD: true,
   ENABLE_FILE_SHARING: true,
@@ -119,7 +129,10 @@ export const FEATURES = {
   ENABLE_THIRD_PARTY_LOGIN: false, // Disabled for security
   ENABLE_CONTENT_MODERATION: true,
   ENABLE_RATE_LIMITING: true,
-  ENABLE_CSRF_PROTECTION: true
+  ENABLE_CSRF_PROTECTION: true,
+  ENABLE_XSS_PROTECTION: true,
+  ENABLE_INPUT_SANITIZATION: true,
+  ENABLE_URL_VALIDATION: true
 } as const;
 
 // Environment-specific configurations
@@ -127,11 +140,23 @@ export const CONFIG = {
   DEVELOPMENT: {
     API_BASE_URL: 'http://localhost:3000',
     ENABLE_DEBUG_LOGS: true,
-    ENABLE_MOCK_DATA: true
+    ENABLE_MOCK_DATA: true,
+    STRICT_CSP: false
   },
   PRODUCTION: {
     API_BASE_URL: 'https://api.sportnet.com',
     ENABLE_DEBUG_LOGS: false,
-    ENABLE_MOCK_DATA: false
+    ENABLE_MOCK_DATA: false,
+    STRICT_CSP: true
   }
+} as const;
+
+// Security headers
+export const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
 } as const;

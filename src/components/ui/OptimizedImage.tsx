@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ImageOff, Loader } from 'lucide-react';
-import { sanitizeText } from '../../utils';
+import { sanitizeText, validateUrl } from '../../utils';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -34,16 +34,35 @@ export function OptimizedImage({
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Sanitize inputs
+  // Enhanced sanitization and validation
   const sanitizedSrc = sanitizeText(src);
   const sanitizedAlt = sanitizeText(alt);
   const sanitizedPlaceholder = placeholder ? sanitizeText(placeholder) : undefined;
 
-  // Validate URL
+  // Enhanced URL validation with security checks
   const isValidUrl = useCallback((url: string): boolean => {
     try {
+      if (!url || typeof url !== 'string') return false;
+      
+      // Basic URL validation
+      if (!validateUrl(url)) return false;
+      
       const urlObj = new URL(url);
-      return ['http:', 'https:', 'data:'].includes(urlObj.protocol);
+      
+      // Additional security checks
+      if (!['http:', 'https:', 'data:'].includes(urlObj.protocol)) {
+        return false;
+      }
+      
+      // Block suspicious domains in production
+      if (process.env.NODE_ENV === 'production') {
+        const suspiciousDomains = ['localhost', '127.0.0.1', '0.0.0.0'];
+        if (suspiciousDomains.some(domain => urlObj.hostname.includes(domain))) {
+          return false;
+        }
+      }
+      
+      return true;
     } catch {
       return false;
     }
@@ -93,16 +112,22 @@ export function OptimizedImage({
   const handleError = useCallback(() => {
     setIsLoading(false);
     
-    // Retry logic for network errors (max 2 retries)
+    // Enhanced retry logic with exponential backoff
     if (retryCount < 2 && currentSrc) {
+      const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000);
       setTimeout(() => {
         setRetryCount(prev => prev + 1);
         setIsLoading(true);
         // Force reload by adding timestamp
-        const url = new URL(currentSrc);
-        url.searchParams.set('retry', retryCount.toString());
-        setCurrentSrc(url.toString());
-      }, 1000 * (retryCount + 1)); // Exponential backoff
+        try {
+          const url = new URL(currentSrc);
+          url.searchParams.set('retry', retryCount.toString());
+          url.searchParams.set('t', Date.now().toString());
+          setCurrentSrc(url.toString());
+        } catch {
+          setHasError(true);
+        }
+      }, retryDelay);
       return;
     }
     
@@ -110,7 +135,7 @@ export function OptimizedImage({
     onError?.();
   }, [onError, retryCount, currentSrc]);
 
-  // Security: Prevent loading of potentially malicious URLs
+  // Enhanced security: Prevent loading of potentially malicious URLs
   const shouldBlockUrl = useCallback((url: string): boolean => {
     if (!url) return true;
     
@@ -122,18 +147,34 @@ export function OptimizedImage({
         return true;
       }
       
+      // Enhanced security checks
+      const hostname = urlObj.hostname.toLowerCase();
+      
       // Block localhost and private IPs in production
       if (process.env.NODE_ENV === 'production') {
-        const hostname = urlObj.hostname.toLowerCase();
         if (
           hostname === 'localhost' ||
           hostname.startsWith('127.') ||
           hostname.startsWith('192.168.') ||
           hostname.startsWith('10.') ||
-          hostname.match(/^172\.(1[6-9]|2[0-9]|3[01])\./)
+          hostname.match(/^172\.(1[6-9]|2[0-9]|3[01])\./) ||
+          hostname === '0.0.0.0' ||
+          hostname.includes('..') // Path traversal attempt
         ) {
           return true;
         }
+      }
+      
+      // Block suspicious patterns
+      const suspiciousPatterns = [
+        /javascript:/i,
+        /vbscript:/i,
+        /data:text\/html/i,
+        /data:application/i
+      ];
+      
+      if (suspiciousPatterns.some(pattern => pattern.test(url))) {
+        return true;
       }
       
       return false;
@@ -186,6 +227,7 @@ export function OptimizedImage({
           onError={handleError}
           crossOrigin="anonymous" // Security: Prevent CORS issues
           referrerPolicy="no-referrer" // Security: Don't send referrer
+          decoding="async" // Performance: Async decoding
           {...props}
         />
       )}

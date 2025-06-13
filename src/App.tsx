@@ -63,7 +63,7 @@ function App() {
       <div className="mobile-optimized">
         <NetworkStatus />
         <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Navigate to="/login\" replace />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -83,7 +83,7 @@ function App() {
             <Route path="/profile/:id" element={<Profile />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/login\" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
     </ErrorBoundary>

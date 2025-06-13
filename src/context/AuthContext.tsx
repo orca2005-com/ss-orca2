@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '../types';
 import { mockProfiles } from '../data/mockProfiles';
-import { handleApiError, storage, validateEmail, validatePassword, sanitizeText, createRateLimiter } from '../utils';
+import { handleApiError, storage, validateEmail, validatePassword, sanitizeText, createRateLimiter, validateInput } from '../utils';
 import { STORAGE_KEYS, ERROR_MESSAGES } from '../constants';
 
 interface StoredUser extends User {
@@ -31,7 +31,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Rate limiter for login attempts (5 attempts per 15 minutes)
+// Enhanced rate limiter for login attempts (5 attempts per 15 minutes)
 const loginRateLimiter = createRateLimiter(5, 15 * 60 * 1000);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -48,9 +48,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const storedUser = storage.get<StoredUser>(STORAGE_KEYS.AUTH_TOKEN);
         if (storedUser) {
-          // Validate stored user data
+          // Enhanced validation of stored user data
           if (!storedUser.id || !storedUser.email || !storedUser.name) {
             console.warn('Invalid stored user data');
+            storage.remove(STORAGE_KEYS.AUTH_TOKEN);
+            return;
+          }
+
+          // Validate email format
+          if (!validateEmail(storedUser.email)) {
+            console.warn('Invalid email in stored user data');
             storage.remove(STORAGE_KEYS.AUTH_TOKEN);
             return;
           }
@@ -64,6 +71,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               name: sanitizeText(storedUser.name),
               role: sanitizeText(storedUser.role)
             };
+            
+            // Additional validation
+            if (!sanitizedUser.id || !sanitizedUser.email || !sanitizedUser.name) {
+              console.warn('User data failed sanitization');
+              storage.remove(STORAGE_KEYS.AUTH_TOKEN);
+              return;
+            }
+            
             setUser(sanitizedUser);
           } else {
             // Token expired, clear storage and redirect to login
@@ -85,13 +100,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const createUserAccount = async (userData: SignupData): Promise<User> => {
     try {
-      // Validate input data
+      // Enhanced validation of input data
       if (!userData.email || !userData.fullName || !userData.role) {
         throw new Error('Missing required user data');
       }
 
-      if (!validateEmail(userData.email)) {
-        throw new Error('Invalid email format');
+      // Validate email format
+      const emailValidation = validateInput(userData.email, 'email');
+      if (!emailValidation.isValid) {
+        throw new Error(emailValidation.error || 'Invalid email format');
+      }
+
+      // Validate name
+      const nameValidation = validateInput(userData.fullName, 'text', 100);
+      if (!nameValidation.isValid) {
+        throw new Error(nameValidation.error || 'Invalid name format');
+      }
+
+      // Validate role
+      const roleValidation = validateInput(userData.role, 'text', 50);
+      if (!roleValidation.isValid) {
+        throw new Error(roleValidation.error || 'Invalid role format');
       }
 
       // Sanitize input data
@@ -100,6 +129,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fullName: sanitizeText(userData.fullName),
         role: sanitizeText(userData.role)
       };
+
+      // Additional security checks
+      if (!sanitizedData.email || !sanitizedData.fullName || !sanitizedData.role) {
+        throw new Error('Data sanitization failed');
+      }
 
       // Simulate API call with validation
       await new Promise((resolve, reject) => {
@@ -132,28 +166,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     
     try {
-      // Input validation
+      // Enhanced input validation
       if (!email || !password) {
         throw new Error(ERROR_MESSAGES.VALIDATION_ERROR);
+      }
+
+      // Validate input types
+      if (typeof email !== 'string' || typeof password !== 'string') {
+        throw new Error('Invalid input types');
       }
 
       // Sanitize inputs
       const sanitizedEmail = sanitizeText(email.toLowerCase());
       const sanitizedPassword = password; // Don't sanitize password as it may contain special chars
 
-      // Validate email format
-      if (!validateEmail(sanitizedEmail)) {
-        throw new Error('Please enter a valid email address');
+      // Enhanced email validation
+      const emailValidation = validateInput(sanitizedEmail, 'email');
+      if (!emailValidation.isValid) {
+        throw new Error(emailValidation.error || 'Please enter a valid email address');
       }
 
-      // Validate password
+      // Enhanced password validation
       const passwordValidation = validatePassword(sanitizedPassword);
       if (!passwordValidation.isValid) {
-        throw new Error('Password does not meet security requirements');
+        throw new Error(passwordValidation.errors[0] || ERROR_MESSAGES.WEAK_PASSWORD);
       }
 
-      // Rate limiting check
-      const clientId = `${sanitizedEmail}_${navigator.userAgent}`;
+      // Enhanced rate limiting check with user agent fingerprinting
+      const clientId = `${sanitizedEmail}_${navigator.userAgent.slice(0, 50)}`;
       if (!loginRateLimiter(clientId)) {
         throw new Error('Too many login attempts. Please try again in 15 minutes.');
       }
@@ -184,7 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
-      // Simulate API call with error handling
+      // Simulate API call with enhanced error handling
       await new Promise((resolve, reject) => {
         setTimeout(() => {
           // Simulate various error conditions
@@ -232,7 +272,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUnreadNotifications(0);
       setError(null);
       
-      // Clear all stored data
+      // Clear all stored data securely
       const keysToRemove = [
         STORAGE_KEYS.AUTH_TOKEN,
         STORAGE_KEYS.USER_PREFERENCES,
@@ -259,9 +299,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!user || !resourceOwnerId) return false;
       
-      // Sanitize inputs
+      // Enhanced validation and sanitization
+      if (typeof resourceOwnerId !== 'string') return false;
+      
       const sanitizedUserId = sanitizeText(user.id);
       const sanitizedResourceId = sanitizeText(resourceOwnerId);
+      
+      if (!sanitizedUserId || !sanitizedResourceId) return false;
       
       return sanitizedUserId === sanitizedResourceId;
     } catch (error) {

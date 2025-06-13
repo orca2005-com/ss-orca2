@@ -37,14 +37,16 @@ export const formatRelativeTime = (date: Date | string): string => {
   }
 };
 
-// String utilities with XSS protection
+// Enhanced string utilities with XSS protection
 export const sanitizeText = (text: string): string => {
   if (typeof text !== 'string') return '';
   
   return text
     .replace(/[<>]/g, '') // Remove potential HTML tags
     .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/data:/gi, '') // Remove data: protocol for security
     .replace(/on\w+=/gi, '') // Remove event handlers
+    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
     .trim();
 };
 
@@ -72,7 +74,7 @@ export const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 };
 
-// Enhanced validation
+// Enhanced validation with stricter security
 export const validateEmail = (email: string): boolean => {
   if (typeof email !== 'string') return false;
   
@@ -81,10 +83,11 @@ export const validateEmail = (email: string): boolean => {
   
   if (!emailRegex.test(email)) return false;
   
-  // Additional checks
+  // Additional security checks
   if (email.length > 254) return false; // RFC 5321 limit
   if (email.includes('..')) return false; // No consecutive dots
   if (email.startsWith('.') || email.endsWith('.')) return false;
+  if (email.includes('<') || email.includes('>')) return false; // Prevent injection
   
   return true;
 };
@@ -124,11 +127,12 @@ export const validatePassword = (password: string): { isValid: boolean; errors: 
   const commonPatterns = [
     /(.)\1{2,}/, // Repeated characters
     /123456|654321|qwerty|password|admin/i, // Common sequences
+    /<script|javascript:|data:|vbscript:/i, // Injection attempts
   ];
   
   for (const pattern of commonPatterns) {
     if (pattern.test(password)) {
-      errors.push('Password contains common weak patterns');
+      errors.push('Password contains common weak patterns or malicious content');
       break;
     }
   }
@@ -141,13 +145,31 @@ export const validateUrl = (url: string): boolean => {
   
   try {
     const urlObj = new URL(url);
-    return ['http:', 'https:'].includes(urlObj.protocol);
+    // Only allow HTTP and HTTPS protocols
+    if (!['http:', 'https:'].includes(urlObj.protocol)) return false;
+    
+    // Block localhost and private IPs in production
+    if (process.env.NODE_ENV === 'production') {
+      const hostname = urlObj.hostname.toLowerCase();
+      if (
+        hostname === 'localhost' ||
+        hostname.startsWith('127.') ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.match(/^172\.(1[6-9]|2[0-9]|3[01])\./) ||
+        hostname === '0.0.0.0'
+      ) {
+        return false;
+      }
+    }
+    
+    return true;
   } catch {
     return false;
   }
 };
 
-// File utilities with security checks
+// Enhanced file utilities with security checks
 export const formatFileSize = (bytes: number): string => {
   if (typeof bytes !== 'number' || bytes < 0 || !isFinite(bytes)) {
     return '0 Bytes';
@@ -163,19 +185,36 @@ export const formatFileSize = (bytes: number): string => {
 
 export const validateFileType = (file: File, allowedTypes: string[]): boolean => {
   if (!file || !file.type) return false;
-  return allowedTypes.some(type => file.type.startsWith(type));
+  
+  // Check MIME type
+  const isAllowedType = allowedTypes.some(type => file.type.startsWith(type));
+  if (!isAllowedType) return false;
+  
+  // Additional security: check file extension
+  const fileName = file.name.toLowerCase();
+  const dangerousExtensions = ['.exe', '.bat', '.cmd', '.scr', '.pif', '.com', '.jar', '.js', '.vbs', '.php', '.asp', '.jsp'];
+  const hasDangerousExtension = dangerousExtensions.some(ext => fileName.endsWith(ext));
+  
+  return !hasDangerousExtension;
 };
 
 export const validateFileSize = (file: File, maxSizeInBytes: number): boolean => {
   if (!file) return false;
-  return file.size <= maxSizeInBytes;
+  return file.size <= maxSizeInBytes && file.size > 0;
 };
 
-// Secure Local Storage with error handling
+// Enhanced secure Local Storage with better error handling
 export const storage = {
   get: <T>(key: string, defaultValue?: T): T | null => {
     if (typeof key !== 'string' || !key.trim()) {
       console.error('Invalid storage key');
+      return defaultValue || null;
+    }
+    
+    // Sanitize key to prevent injection
+    const sanitizedKey = sanitizeText(key);
+    if (sanitizedKey !== key) {
+      console.error('Storage key contains invalid characters');
       return defaultValue || null;
     }
     
@@ -185,16 +224,16 @@ export const storage = {
         return defaultValue || null;
       }
       
-      const item = localStorage.getItem(key);
+      const item = localStorage.getItem(sanitizedKey);
       if (item === null) return defaultValue || null;
       
       const parsed = JSON.parse(item);
       
       // Validate parsed data structure
       if (parsed && typeof parsed === 'object' && parsed.timestamp) {
-        // Check if data has expired (optional expiration mechanism)
+        // Check if data has expired
         if (parsed.expiresAt && new Date(parsed.expiresAt) < new Date()) {
-          localStorage.removeItem(key);
+          localStorage.removeItem(sanitizedKey);
           return defaultValue || null;
         }
         return parsed.data;
@@ -205,7 +244,7 @@ export const storage = {
       console.error('Failed to get from localStorage:', error);
       // Try to remove corrupted data
       try {
-        localStorage.removeItem(key);
+        localStorage.removeItem(sanitizedKey);
       } catch (removeError) {
         console.error('Failed to remove corrupted data:', removeError);
       }
@@ -216,6 +255,13 @@ export const storage = {
   set: <T>(key: string, value: T, expirationHours?: number): boolean => {
     if (typeof key !== 'string' || !key.trim()) {
       console.error('Invalid storage key');
+      return false;
+    }
+    
+    // Sanitize key to prevent injection
+    const sanitizedKey = sanitizeText(key);
+    if (sanitizedKey !== key) {
+      console.error('Storage key contains invalid characters');
       return false;
     }
     
@@ -233,13 +279,13 @@ export const storage = {
       
       const serialized = JSON.stringify(dataToStore);
       
-      // Check storage quota
-      if (serialized.length > 5 * 1024 * 1024) { // 5MB limit
+      // Check storage quota (5MB limit)
+      if (serialized.length > 5 * 1024 * 1024) {
         console.error('Data too large for localStorage');
         return false;
       }
       
-      localStorage.setItem(key, serialized);
+      localStorage.setItem(sanitizedKey, serialized);
       return true;
     } catch (error) {
       console.error('Failed to save to localStorage:', error);
@@ -247,7 +293,7 @@ export const storage = {
       // Handle quota exceeded error
       if (error instanceof DOMException && error.code === 22) {
         console.error('localStorage quota exceeded');
-        // Optionally clear old data
+        // Cleanup expired data
         try {
           const keys = Object.keys(localStorage);
           keys.forEach(k => {
@@ -277,13 +323,19 @@ export const storage = {
       return false;
     }
     
+    const sanitizedKey = sanitizeText(key);
+    if (sanitizedKey !== key) {
+      console.error('Storage key contains invalid characters');
+      return false;
+    }
+    
     try {
       if (typeof localStorage === 'undefined') {
         console.warn('localStorage not available');
         return false;
       }
       
-      localStorage.removeItem(key);
+      localStorage.removeItem(sanitizedKey);
       return true;
     } catch (error) {
       console.error('Failed to remove from localStorage:', error);
@@ -307,7 +359,7 @@ export const storage = {
   }
 };
 
-// Enhanced error handling
+// Enhanced error handling with better sanitization
 interface ApiError {
   response?: {
     data?: {
@@ -326,7 +378,7 @@ export const handleApiError = (error: ApiError) => {
   // Sanitize error messages to prevent XSS
   const sanitizeErrorMessage = (message: string): string => {
     if (typeof message !== 'string') return 'An error occurred';
-    return sanitizeText(message);
+    return sanitizeText(message).slice(0, 200); // Limit length
   };
 
   // Handle validation errors
@@ -471,7 +523,7 @@ export const handleApiError = (error: ApiError) => {
   };
 };
 
-// Device detection with better security
+// Enhanced device detection with better security
 export const isMobile = (): boolean => {
   try {
     if (typeof navigator === 'undefined') return false;
@@ -493,16 +545,38 @@ export const isMobile = (): boolean => {
   }
 };
 
-// Rate limiting utility
+// Enhanced rate limiting utility with better memory management
 export const createRateLimiter = (maxRequests: number, windowMs: number) => {
   const requests = new Map<string, number[]>();
   
+  // Cleanup old entries periodically
+  const cleanup = () => {
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    
+    for (const [key, timestamps] of requests.entries()) {
+      const recentRequests = timestamps.filter(timestamp => timestamp > windowStart);
+      if (recentRequests.length === 0) {
+        requests.delete(key);
+      } else {
+        requests.set(key, recentRequests);
+      }
+    }
+  };
+  
+  // Run cleanup every 5 minutes
+  setInterval(cleanup, 5 * 60 * 1000);
+  
   return (identifier: string): boolean => {
+    // Sanitize identifier
+    const sanitizedId = sanitizeText(identifier);
+    if (!sanitizedId) return false;
+    
     const now = Date.now();
     const windowStart = now - windowMs;
     
     // Get existing requests for this identifier
-    const userRequests = requests.get(identifier) || [];
+    const userRequests = requests.get(sanitizedId) || [];
     
     // Filter out old requests
     const recentRequests = userRequests.filter(timestamp => timestamp > windowStart);
@@ -514,7 +588,7 @@ export const createRateLimiter = (maxRequests: number, windowMs: number) => {
     
     // Add current request
     recentRequests.push(now);
-    requests.set(identifier, recentRequests);
+    requests.set(sanitizedId, recentRequests);
     
     return true;
   };
@@ -530,7 +604,7 @@ export const createCSPNonce = (): string => {
   return generateId();
 };
 
-// Debounce utility for performance
+// Enhanced debounce utility for performance
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number,
@@ -553,7 +627,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-// Throttle utility for performance
+// Enhanced throttle utility for performance
 export const throttle = <T extends (...args: any[]) => any>(
   func: T,
   limit: number
@@ -567,4 +641,46 @@ export const throttle = <T extends (...args: any[]) => any>(
       setTimeout(() => inThrottle = false, limit);
     }
   };
+};
+
+// Input validation for forms
+export const validateInput = (value: string, type: 'text' | 'email' | 'password' | 'url', maxLength = 255): { isValid: boolean; error?: string } => {
+  if (typeof value !== 'string') {
+    return { isValid: false, error: 'Invalid input type' };
+  }
+  
+  // Check length
+  if (value.length > maxLength) {
+    return { isValid: false, error: `Input too long (max ${maxLength} characters)` };
+  }
+  
+  // Check for malicious content
+  const maliciousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /data:/i,
+    /vbscript:/i,
+    /on\w+=/i,
+    /eval\(/i,
+    /expression\(/i
+  ];
+  
+  for (const pattern of maliciousPatterns) {
+    if (pattern.test(value)) {
+      return { isValid: false, error: 'Input contains potentially malicious content' };
+    }
+  }
+  
+  // Type-specific validation
+  switch (type) {
+    case 'email':
+      return { isValid: validateEmail(value), error: validateEmail(value) ? undefined : 'Invalid email format' };
+    case 'password':
+      const passwordResult = validatePassword(value);
+      return { isValid: passwordResult.isValid, error: passwordResult.errors[0] };
+    case 'url':
+      return { isValid: validateUrl(value), error: validateUrl(value) ? undefined : 'Invalid URL format' };
+    default:
+      return { isValid: true };
+  }
 };
