@@ -63,11 +63,6 @@ export default function Profile() {
     setProfile({ ...profile, certifications });
   };
 
-  const handleUpdateConnections = (connections: any[]) => {
-    if (!isOwnProfile) return;
-    setProfile({ ...profile, connections });
-  };
-
   const handleUpdatePosts = (posts: any[]) => {
     if (!isOwnProfile) return;
     setProfile({ ...profile, posts });
@@ -127,12 +122,12 @@ export default function Profile() {
               posts={profile.posts}
               achievements={profile.achievements}
               certifications={profile.certifications || []}
-              connections={profile.connections}
+              followers={profile.followers || []}
+              following={profile.following || []}
               userRole={profile.role}
               isEditing={isEditing && isOwnProfile}
               onUpdateAchievements={isOwnProfile ? handleUpdateAchievements : undefined}
               onUpdateCertifications={isOwnProfile ? handleUpdateCertifications : undefined}
-              onUpdateConnections={isOwnProfile ? handleUpdateConnections : undefined}
               onUpdatePosts={isOwnProfile ? handleUpdatePosts : undefined}
             />
           </div>

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Tab } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Image, Trophy, Users, Plus, X, ChevronRight, Award, Sparkles, TrendingUp } from 'lucide-react';
+import { Image, Trophy, Users, Plus, X, ChevronRight, Award, Sparkles, TrendingUp, UserPlus } from 'lucide-react';
 import { MediaGrid } from '../ui/MediaGrid';
 
 interface ProfileTabsProps {
   isPrivate?: boolean;
   posts: any[];
   achievements: string[];
-  connections: any[];
+  followers: any[];
+  following: any[];
   certifications?: string[];
   isEditing?: boolean;
   onUpdateAchievements?: (achievements: string[]) => void;
@@ -28,7 +29,8 @@ export function ProfileTabs({
   isPrivate = false,
   posts,
   achievements,
-  connections,
+  followers,
+  following,
   certifications = [],
   isEditing = false,
   onUpdateAchievements,
@@ -40,7 +42,8 @@ export function ProfileTabs({
   const [newCertification, setNewCertification] = useState('');
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [showAllAchievements, setShowAllAchievements] = useState(false);
-  const [showAllConnections, setShowAllConnections] = useState(false);
+  const [showAllFollowers, setShowAllFollowers] = useState(false);
+  const [showAllFollowing, setShowAllFollowing] = useState(false);
   const [showAllCertifications, setShowAllCertifications] = useState(false);
 
   const handleAddAchievement = () => {
@@ -77,7 +80,8 @@ export function ProfileTabs({
 
   const visiblePosts = showAllPosts ? posts : posts.slice(0, 2);
   const visibleAchievements = showAllAchievements ? achievements : achievements.slice(0, 3);
-  const visibleConnections = showAllConnections ? connections : connections.slice(0, 3);
+  const visibleFollowers = showAllFollowers ? followers : followers.slice(0, 3);
+  const visibleFollowing = showAllFollowing ? following : following.slice(0, 3);
   const visibleCertifications = showAllCertifications ? certifications : certifications.slice(0, 3);
 
   // Convert posts to media format for MediaGrid
@@ -118,12 +122,21 @@ export function ProfileTabs({
     });
   }
 
-  baseTabs.push({ 
-    name: 'Followers', 
-    icon: <Users className="w-4 h-4 md:w-5 md:h-5" />,
-    color: 'text-green-400',
-    count: connections.length
-  });
+  // Add followers and following tabs
+  baseTabs.push(
+    { 
+      name: 'Followers', 
+      icon: <Users className="w-4 h-4 md:w-5 md:h-5" />,
+      color: 'text-green-400',
+      count: followers.length
+    },
+    { 
+      name: 'Following', 
+      icon: <UserPlus className="w-4 h-4 md:w-5 md:h-5" />,
+      color: 'text-blue-400',
+      count: following.length
+    }
+  );
 
   const tabs = baseTabs;
 
@@ -462,15 +475,15 @@ export function ProfileTabs({
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-white">Followers</h3>
-                      <p className="text-sm text-gray-400">{connections.length} followers</p>
+                      <p className="text-sm text-gray-400">{followers.length} followers</p>
                     </div>
                   </div>
 
-                  {visibleConnections.length > 0 ? (
+                  {visibleFollowers.length > 0 ? (
                     <div className="grid grid-cols-1 gap-4">
-                      {visibleConnections.map((connection) => (
+                      {visibleFollowers.map((follower) => (
                         <motion.div
-                          key={connection.id}
+                          key={follower.id}
                           initial={{ scale: 0.95, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0.95, opacity: 0 }}
@@ -479,15 +492,15 @@ export function ProfileTabs({
                         >
                           <div className="relative">
                             <img 
-                              src={connection.avatar} 
+                              src={follower.avatar} 
                               alt="" 
                               className="w-12 h-12 rounded-xl object-cover border-2 border-white/10 group-hover:border-green-400/50 transition-colors" 
                             />
                             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-dark-lighter" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-white group-hover:text-green-400 transition-colors truncate">{connection.name}</p>
-                            <p className="text-sm text-gray-400">{connection.role}</p>
+                            <p className="font-semibold text-white group-hover:text-green-400 transition-colors truncate">{follower.name}</p>
+                            <p className="text-sm text-gray-400">{follower.role}</p>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                             <ChevronRight className="w-5 h-5 text-green-400" />
@@ -505,13 +518,80 @@ export function ProfileTabs({
                     </div>
                   )}
 
-                  {connections.length > 3 && (
+                  {followers.length > 3 && (
                     <motion.button
-                      onClick={() => setShowAllConnections(!showAllConnections)}
+                      onClick={() => setShowAllFollowers(!showAllFollowers)}
                       className="flex items-center justify-center space-x-2 w-full py-3 text-green-400 hover:text-green-300 transition-colors font-medium bg-green-400/10 hover:bg-green-400/20 rounded-xl"
                     >
-                      <span>{showAllConnections ? 'Show Less' : `Show All ${connections.length} Followers`}</span>
-                      <ChevronRight className={`w-4 h-4 transform transition-transform ${showAllConnections ? 'rotate-90' : ''}`} />
+                      <span>{showAllFollowers ? 'Show Less' : `Show All ${followers.length} Followers`}</span>
+                      <ChevronRight className={`w-4 h-4 transform transition-transform ${showAllFollowers ? 'rotate-90' : ''}`} />
+                    </motion.button>
+                  )}
+                </div>
+              </motion.div>
+            </Tab.Panel>
+
+            {/* Following Tab - Enhanced */}
+            <Tab.Panel className="rounded-2xl bg-dark-lighter/60 backdrop-blur-xl p-4 md:p-6 border border-white/10">
+              <motion.div {...containerAnimation}>
+                <div className="space-y-4 md:space-y-6">
+                  {/* Header */}
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-400/20 rounded-xl flex items-center justify-center">
+                      <UserPlus className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Following</h3>
+                      <p className="text-sm text-gray-400">{following.length} following</p>
+                    </div>
+                  </div>
+
+                  {visibleFollowing.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-4">
+                      {visibleFollowing.map((followingUser) => (
+                        <motion.div
+                          key={followingUser.id}
+                          initial={{ scale: 0.95, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.95, opacity: 0 }}
+                          whileHover={{ scale: 1.02 }}
+                          className="flex items-center space-x-4 bg-dark/50 rounded-xl p-4 border border-white/5 hover:border-blue-400/30 transition-all cursor-pointer group"
+                        >
+                          <div className="relative">
+                            <img 
+                              src={followingUser.avatar} 
+                              alt="" 
+                              className="w-12 h-12 rounded-xl object-cover border-2 border-white/10 group-hover:border-blue-400/50 transition-colors" 
+                            />
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-400 rounded-full border-2 border-dark-lighter" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-white group-hover:text-blue-400 transition-colors truncate">{followingUser.name}</p>
+                            <p className="text-sm text-gray-400">{followingUser.role}</p>
+                          </div>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ChevronRight className="w-5 h-5 text-blue-400" />
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-blue-400/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <UserPlus className="w-8 h-8 text-blue-400" />
+                      </div>
+                      <p className="text-gray-400 text-lg font-medium">Not following anyone yet</p>
+                      <p className="text-gray-500 text-sm">Start following other athletes and coaches</p>
+                    </div>
+                  )}
+
+                  {following.length > 3 && (
+                    <motion.button
+                      onClick={() => setShowAllFollowing(!showAllFollowing)}
+                      className="flex items-center justify-center space-x-2 w-full py-3 text-blue-400 hover:text-blue-300 transition-colors font-medium bg-blue-400/10 hover:bg-blue-400/20 rounded-xl"
+                    >
+                      <span>{showAllFollowing ? 'Show Less' : `Show All ${following.length} Following`}</span>
+                      <ChevronRight className={`w-4 h-4 transform transition-transform ${showAllFollowing ? 'rotate-90' : ''}`} />
                     </motion.button>
                   )}
                 </div>

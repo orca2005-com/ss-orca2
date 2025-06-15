@@ -26,7 +26,7 @@ export interface Profile {
   bio: string;
   stats: {
     followers: number;
-    connections: number;
+    following: number; // Changed from connections to following
   };
   achievements: string[];
   certifications?: string[];
@@ -34,7 +34,22 @@ export interface Profile {
   media: { id: string; url: string; type: 'image' | 'video'; title: string }[];
   externalLink?: string;
   isPrivate: boolean;
-  connections: Connection[];
+  followers: Follower[];
+  following: Following[];
+}
+
+export interface Follower {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+}
+
+export interface Following {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
 }
 
 export interface Connection {

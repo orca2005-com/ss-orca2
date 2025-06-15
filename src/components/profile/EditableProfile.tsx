@@ -387,7 +387,7 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                     </motion.div>
                   )}
 
-                  {/* Enhanced Stats */}
+                  {/* Enhanced Stats - Updated to show Followers and Following */}
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -407,11 +407,11 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                     <div className="text-center group cursor-pointer">
                       <div className="relative">
                         <p className="text-2xl md:text-3xl font-bold text-white group-hover:text-accent transition-colors">
-                          {formData.stats.connections}
+                          {formData.stats.following}
                         </p>
                         <div className="absolute -inset-2 bg-accent/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
                       </div>
-                      <p className="text-sm text-gray-400 font-medium">Connections</p>
+                      <p className="text-sm text-gray-400 font-medium">Following</p>
                     </div>
                   </motion.div>
                 </div>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users } from 'lucide-react';
 
-interface MutualConnection {
+interface MutualFollower {
   id: string;
   name: string;
   avatar: string;
@@ -11,7 +11,7 @@ interface MutualConnection {
 }
 
 interface MutualConnectionsProps {
-  connections: MutualConnection[];
+  connections: MutualFollower[];
   onViewProfile: (id: string) => void;
 }
 

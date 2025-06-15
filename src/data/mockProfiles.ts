@@ -11,7 +11,7 @@ export interface Profile {
   bio: string;
   stats: {
     followers: number;
-    connections: number;
+    following: number; // Changed from connections to following
   };
   achievements: string[];
   certifications?: string[]; // Add certifications for coaches
@@ -19,8 +19,14 @@ export interface Profile {
   media: { id: string; url: string; type: 'image' | 'video'; title: string }[];
   externalLink?: string;
   isPrivate: boolean;
-  connections: {
-    id: number;
+  followers: {
+    id: string;
+    name: string;
+    role: string;
+    avatar: string;
+  }[];
+  following: {
+    id: string;
     name: string;
     role: string;
     avatar: string;
@@ -39,7 +45,7 @@ export const mockProfiles: Record<string, Profile> = {
     bio: 'Professional basketball player with 5+ years of experience. Love the game and always pushing to improve.',
     stats: {
       followers: 1234,
-      connections: 89
+      following: 89 // Changed from connections
     },
     achievements: [
       'Regional Championship MVP 2023',
@@ -64,18 +70,38 @@ export const mockProfiles: Record<string, Profile> = {
       }
     ],
     isPrivate: false,
-    connections: [
+    followers: [
       {
-        id: 1,
+        id: '2',
         name: 'Elite Sports Academy',
         role: 'Team',
         avatar: 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg'
       },
       {
-        id: 2,
-        name: 'Coach Thompson',
+        id: '3',
+        name: 'Sarah Johnson',
         role: 'Coach',
         avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
+      },
+      {
+        id: '4',
+        name: 'Mike Rodriguez',
+        role: 'Player',
+        avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg'
+      }
+    ],
+    following: [
+      {
+        id: '3',
+        name: 'Sarah Johnson',
+        role: 'Coach',
+        avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
+      },
+      {
+        id: '6',
+        name: 'Coach Martinez',
+        role: 'Coach',
+        avatar: 'https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg'
       }
     ]
   },
@@ -90,7 +116,7 @@ export const mockProfiles: Record<string, Profile> = {
     bio: 'Premier sports academy focused on developing young talent across multiple sports.',
     stats: {
       followers: 5678,
-      connections: 234
+      following: 234
     },
     achievements: [
       'Best Youth Academy 2023',
@@ -115,7 +141,15 @@ export const mockProfiles: Record<string, Profile> = {
       }
     ],
     isPrivate: false,
-    connections: []
+    followers: [
+      {
+        id: '1',
+        name: 'John Smith',
+        role: 'Player',
+        avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg'
+      }
+    ],
+    following: []
   },
   '3': {
     id: '3',
@@ -128,7 +162,7 @@ export const mockProfiles: Record<string, Profile> = {
     bio: 'Professional tennis coach with 10+ years of experience. Specialized in youth development.',
     stats: {
       followers: 3456,
-      connections: 156
+      following: 156
     },
     achievements: [
       'Coach of the Year 2022',
@@ -161,18 +195,26 @@ export const mockProfiles: Record<string, Profile> = {
       }
     ],
     isPrivate: false,
-    connections: [
+    followers: [
       {
-        id: 1,
+        id: '1',
         name: 'John Smith',
         role: 'Player',
         avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg'
       },
       {
-        id: 2,
+        id: '2',
         name: 'Elite Sports Academy',
         role: 'Team',
         avatar: 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg'
+      }
+    ],
+    following: [
+      {
+        id: '1',
+        name: 'John Smith',
+        role: 'Player',
+        avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg'
       }
     ]
   },
@@ -188,7 +230,7 @@ export const mockProfiles: Record<string, Profile> = {
     bio: 'Professional soccer player passionate about the beautiful game.',
     stats: {
       followers: 2890,
-      connections: 145
+      following: 145
     },
     achievements: [
       'La Liga Young Player Award 2023',
@@ -213,7 +255,15 @@ export const mockProfiles: Record<string, Profile> = {
       }
     ],
     isPrivate: false,
-    connections: []
+    followers: [
+      {
+        id: '1',
+        name: 'John Smith',
+        role: 'Player',
+        avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg'
+      }
+    ],
+    following: []
   },
   '5': {
     id: '5',
@@ -226,7 +276,7 @@ export const mockProfiles: Record<string, Profile> = {
     bio: 'Professional basketball team competing in the national league.',
     stats: {
       followers: 8920,
-      connections: 67
+      following: 67
     },
     achievements: [
       'National Championship 2022',
@@ -251,7 +301,8 @@ export const mockProfiles: Record<string, Profile> = {
       }
     ],
     isPrivate: false,
-    connections: []
+    followers: [],
+    following: []
   },
   // Add a coach profile for demonstration
   '6': {
@@ -265,7 +316,7 @@ export const mockProfiles: Record<string, Profile> = {
     bio: 'Elite basketball coach specializing in player development and team strategy. 15+ years of coaching experience.',
     stats: {
       followers: 4200,
-      connections: 189
+      following: 189
     },
     achievements: [
       'State Championship Coach 2023',
@@ -301,18 +352,26 @@ export const mockProfiles: Record<string, Profile> = {
       }
     ],
     isPrivate: false,
-    connections: [
+    followers: [
       {
-        id: 1,
+        id: '1',
         name: 'John Smith',
         role: 'Player',
         avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg'
       },
       {
-        id: 2,
+        id: '5',
         name: 'Thunder Basketball Club',
         role: 'Team',
         avatar: 'https://images.pexels.com/photos/1752757/pexels-photo-1752757.jpeg'
+      }
+    ],
+    following: [
+      {
+        id: '1',
+        name: 'John Smith',
+        role: 'Player',
+        avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg'
       }
     ]
   }

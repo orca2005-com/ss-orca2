@@ -284,7 +284,7 @@ export default function Home() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">2.1k</p>
-                <p className="text-xs text-gray-400">Connections</p>
+                <p className="text-xs text-gray-400">Following</p>
               </div>
             </div>
           </button>
@@ -547,7 +547,7 @@ export default function Home() {
                     </div>
                     <div>
                       <p className="text-lg font-semibold text-white">2.1k</p>
-                      <p className="text-xs text-gray-400">Connections</p>
+                      <p className="text-xs text-gray-400">Following</p>
                     </div>
                     <div>
                       <p className="text-lg font-semibold text-white">156</p>
