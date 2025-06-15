@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Edit2, Check, X, Camera, MapPin, Link as LinkIcon, Share2, Star, Award, Users } from 'lucide-react';
+import { Edit2, Check, X, Camera, MapPin, Link as LinkIcon, Share2, Star, Award, Users, Copy, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { createPortal } from 'react-dom';
@@ -27,10 +27,11 @@ interface ShareDropdownProps {
   isOpen: boolean;
   onClose: () => void;
   buttonRef: React.RefObject<HTMLButtonElement>;
-  onShare: (platform: 'facebook' | 'twitter' | 'linkedin' | 'copy') => void;
+  onShare: (platform: 'facebook' | 'twitter' | 'linkedin' | 'copy' | 'native') => void;
+  profile: Profile;
 }
 
-function ShareDropdown({ isOpen, onClose, buttonRef, onShare }: ShareDropdownProps) {
+function ShareDropdown({ isOpen, onClose, buttonRef, onShare, profile }: ShareDropdownProps) {
   const [position, setPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
@@ -38,7 +39,7 @@ function ShareDropdown({ isOpen, onClose, buttonRef, onShare }: ShareDropdownPro
       const rect = buttonRef.current.getBoundingClientRect();
       setPosition({
         top: rect.bottom + 8,
-        left: rect.right - 192
+        left: rect.right - 240 // Wider dropdown for profile sharing
       });
     }
   }, [isOpen, buttonRef]);
@@ -53,26 +54,55 @@ function ShareDropdown({ isOpen, onClose, buttonRef, onShare }: ShareDropdownPro
           initial={{ opacity: 0, scale: 0.95, y: -10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -10 }}
-          className="fixed bg-dark-lighter/95 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden z-[9999] border border-white/10 min-w-48"
+          className="fixed bg-dark-lighter/95 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden z-[9999] border border-white/10 min-w-60"
           style={{ top: position.top, left: position.left }}
         >
-          {[
-            { label: 'Facebook', action: () => onShare('facebook') },
-            { label: 'Twitter', action: () => onShare('twitter') },
-            { label: 'LinkedIn', action: () => onShare('linkedin') },
-            { label: 'Copy Link', action: () => onShare('copy') }
-          ].map((item, index) => (
-            <motion.button
-              key={item.label}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              onClick={item.action}
-              className="block w-full px-4 py-3 text-left hover:bg-white/10 text-white transition-colors font-medium"
+          <div className="p-3">
+            <p className="text-xs text-gray-400 px-3 py-2 font-medium">Share {profile.name}'s profile</p>
+            
+            <button
+              onClick={() => onShare('facebook')}
+              className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
             >
-              {item.label}
-            </motion.button>
-          ))}
+              <div className="w-4 h-4 bg-blue-600 rounded"></div>
+              <span>Share on Facebook</span>
+            </button>
+            
+            <button
+              onClick={() => onShare('twitter')}
+              className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-sky-500/20 hover:text-sky-400 transition-colors ultra-touch rounded-lg"
+            >
+              <div className="w-4 h-4 bg-sky-500 rounded"></div>
+              <span>Share on Twitter</span>
+            </button>
+            
+            <button
+              onClick={() => onShare('linkedin')}
+              className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-700/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
+            >
+              <div className="w-4 h-4 bg-blue-700 rounded"></div>
+              <span>Share on LinkedIn</span>
+            </button>
+            
+            <button
+              onClick={() => onShare('copy')}
+              data-platform="copy"
+              className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-gray-600/20 hover:text-gray-300 transition-colors ultra-touch rounded-lg"
+            >
+              <Copy className="w-4 h-4" />
+              <span>Copy Profile Link</span>
+            </button>
+            
+            {navigator.share && (
+              <button
+                onClick={() => onShare('native')}
+                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-accent/20 hover:text-accent transition-colors ultra-touch rounded-lg"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>More Share Options</span>
+              </button>
+            )}
+          </div>
         </motion.div>
       </AnimatePresence>
     </>,
@@ -124,30 +154,78 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
     onEditingChange(false);
   };
 
-  const handleShare = async (platform: 'facebook' | 'twitter' | 'linkedin' | 'copy') => {
-    const shareUrl = window.location.href;
-    const shareText = `Check out ${profile.name}'s profile on SportNet!`;
-
-    switch (platform) {
-      case 'facebook':
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
-        break;
-      case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
-        break;
-      case 'linkedin':
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank');
-        break;
-      case 'copy':
-        try {
-          await navigator.clipboard.writeText(shareUrl);
-          alert('Profile link copied to clipboard!');
-        } catch (err) {
-          console.error('Failed to copy link:', err);
-        }
-        break;
+  // Enhanced Share Functionality for Profiles
+  const handleShare = async (platform: 'facebook' | 'twitter' | 'linkedin' | 'copy' | 'native') => {
+    const profileUrl = window.location.href;
+    const shareText = `Check out ${profile.name}'s profile on SportSYNC! ${profile.role} specializing in ${profile.sport}.`;
+    
+    try {
+      switch (platform) {
+        case 'facebook':
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(profileUrl)}`, '_blank', 'width=600,height=400');
+          break;
+        case 'twitter':
+          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(profileUrl)}`, '_blank', 'width=600,height=400');
+          break;
+        case 'linkedin':
+          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(profileUrl)}`, '_blank', 'width=600,height=400');
+          break;
+        case 'copy':
+          await navigator.clipboard.writeText(profileUrl);
+          // Show success feedback
+          const button = shareButtonRef.current?.parentElement?.querySelector('[data-platform="copy"]');
+          if (button) {
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+              button.textContent = originalText;
+            }, 2000);
+          }
+          break;
+        case 'native':
+          if (navigator.share) {
+            await navigator.share({
+              title: `${profile.name} - SportSYNC Profile`,
+              text: shareText,
+              url: profileUrl
+            });
+          }
+          break;
+      }
+      
+      setShowShareOptions(false);
+    } catch (error) {
+      console.error('Share failed:', error);
+      // Fallback to copy link
+      try {
+        await navigator.clipboard.writeText(profileUrl);
+        alert('Profile link copied to clipboard!');
+      } catch (copyError) {
+        console.error('Copy failed:', copyError);
+        alert('Unable to share. Please copy the URL from your browser.');
+      }
     }
-    setShowShareOptions(false);
+  };
+
+  // Try native share first, fallback to dropdown
+  const handleShareClick = async () => {
+    const profileUrl = window.location.href;
+    const shareText = `Check out ${profile.name}'s profile on SportSYNC! ${profile.role} specializing in ${profile.sport}.`;
+    
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${profile.name} - SportSYNC Profile`,
+          text: shareText,
+          url: profileUrl
+        });
+      } else {
+        setShowShareOptions(!showShareOptions);
+      }
+    } catch (error) {
+      console.error('Native share failed:', error);
+      setShowShareOptions(!showShareOptions);
+    }
   };
 
   const getRoleIcon = (role: string) => {
@@ -447,16 +525,10 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                         ref={shareButtonRef}
                         variant="outline"
                         icon={Share2}
-                        onClick={() => setShowShareOptions(!showShareOptions)}
+                        onClick={handleShareClick}
                       >
                         Share
                       </Button>
-                      <ShareDropdown
-                        isOpen={showShareOptions}
-                        onClose={() => setShowShareOptions(false)}
-                        buttonRef={shareButtonRef}
-                        onShare={handleShare}
-                      />
                     </div>
                   )
                 ) : (
@@ -472,27 +544,26 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                       ref={shareButtonRef}
                       variant="outline"
                       icon={Share2}
-                      onClick={() => setShowShareOptions(!showShareOptions)}
+                      onClick={handleShareClick}
                     >
                       Share Profile
                     </Button>
                   </div>
-                )}
-                
-                {/* Share dropdown for non-editing mode */}
-                {!canEdit && (
-                  <ShareDropdown
-                    isOpen={showShareOptions}
-                    onClose={() => setShowShareOptions(false)}
-                    buttonRef={shareButtonRef}
-                    onShare={handleShare}
-                  />
                 )}
               </div>
             </div>
           </Card>
         </motion.div>
       </div>
+
+      {/* Enhanced Share Dropdown */}
+      <ShareDropdown
+        isOpen={showShareOptions}
+        onClose={() => setShowShareOptions(false)}
+        buttonRef={shareButtonRef}
+        onShare={handleShare}
+        profile={profile}
+      />
     </div>
   );
 }
