@@ -82,10 +82,10 @@ export function Navbar() {
             <Link to="/home" className="flex items-center space-x-3">
               <img 
                 src="/Group_2__6_-removebg-preview.png" 
-                alt="SportNet Logo" 
+                alt="SportSYNC Logo" 
                 className="w-8 h-8 object-contain"
               />
-              <span className="text-xl font-bold text-accent">SportNet</span>
+              <span className="text-xl font-bold text-accent">SportSYNC</span>
             </Link>
           </div>
 

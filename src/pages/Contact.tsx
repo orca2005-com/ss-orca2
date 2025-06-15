@@ -29,7 +29,7 @@ export default function Contact() {
       icon: Mail,
       title: 'Email Support',
       description: 'Get help via email',
-      contact: 'support@sportnet.com',
+      contact: 'support@sportsync.com',
       response: '24-48 hours'
     },
     {
@@ -263,7 +263,7 @@ export default function Contact() {
               </div>
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">SportNet Headquarters</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">SportSYNC Headquarters</h3>
                   <p className="text-gray-400">
                     123 Sports Avenue<br />
                     Innovation District<br />

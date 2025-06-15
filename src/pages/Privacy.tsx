@@ -82,7 +82,7 @@ export default function Privacy() {
         >
           <h2 className="text-2xl font-bold text-white mb-4">Introduction</h2>
           <p className="text-gray-300 leading-relaxed">
-            SportNet ("we," "our," or "us") is committed to protecting your privacy and ensuring you have a 
+            SportSYNC ("we," "our," or "us") is committed to protecting your privacy and ensuring you have a 
             positive experience on our platform. This Privacy Policy explains how we collect, use, disclose, 
             and safeguard your information when you use our sports networking platform and related services.
           </p>
@@ -185,7 +185,7 @@ export default function Privacy() {
             <h2 className="text-2xl font-bold text-white">Children's Privacy</h2>
           </div>
           <p className="text-gray-300">
-            SportNet is not intended for children under 13 years of age. We do not knowingly collect 
+            SportSYNC is not intended for children under 13 years of age. We do not knowingly collect 
             personal information from children under 13. If you believe we have collected information 
             from a child under 13, please contact us immediately so we can take appropriate action.
           </p>
@@ -205,7 +205,7 @@ export default function Privacy() {
             on our platform and updating the "Last updated" date.
           </p>
           <p className="text-gray-300">
-            Your continued use of SportNet after any changes indicates your acceptance of the updated policy.
+            Your continued use of SportSYNC after any changes indicates your acceptance of the updated policy.
           </p>
         </motion.div>
 

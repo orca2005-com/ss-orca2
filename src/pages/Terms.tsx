@@ -37,7 +37,7 @@ export default function Terms() {
         'You retain ownership of content you create and share',
         'By posting content, you grant us a license to display and distribute it',
         'You are responsible for ensuring you have rights to share content',
-        'SportNet owns all platform features, design, and functionality',
+        'SportSYNC owns all platform features, design, and functionality',
         'Respect trademarks, copyrights, and other intellectual property rights'
       ]
     },
@@ -68,7 +68,7 @@ export default function Terms() {
             <h1 className="text-4xl md:text-5xl font-bold text-white">Terms & Conditions</h1>
           </div>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Please read these terms carefully before using SportNet. By using our platform, you agree to these terms.
+            Please read these terms carefully before using SportSYNC. By using our platform, you agree to these terms.
           </p>
           <p className="text-sm text-gray-500">
             Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -84,8 +84,8 @@ export default function Terms() {
         >
           <h2 className="text-2xl font-bold text-white mb-4">Agreement to Terms</h2>
           <p className="text-gray-300 leading-relaxed mb-4">
-            These Terms and Conditions ("Terms") govern your use of SportNet, a sports networking platform 
-            operated by SportNet Inc. ("Company," "we," "our," or "us"). By accessing or using our platform, 
+            These Terms and Conditions ("Terms") govern your use of SportSYNC, a sports networking platform 
+            operated by SportSYNC Inc. ("Company," "we," "our," or "us"). By accessing or using our platform, 
             you agree to be bound by these Terms.
           </p>
           <p className="text-gray-300 leading-relaxed">
@@ -130,7 +130,7 @@ export default function Terms() {
             <h2 className="text-2xl font-bold text-white">Prohibited Activities</h2>
           </div>
           <p className="text-gray-300 mb-4">
-            The following activities are strictly prohibited on SportNet:
+            The following activities are strictly prohibited on SportSYNC:
           </p>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
@@ -190,7 +190,7 @@ export default function Terms() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">Service Availability</h3>
               <p>
-                SportNet is provided "as is" without warranties of any kind. We do not guarantee uninterrupted 
+                SportSYNC is provided "as is" without warranties of any kind. We do not guarantee uninterrupted 
                 access or error-free operation of our platform.
               </p>
             </div>
@@ -222,7 +222,7 @@ export default function Terms() {
           <div className="space-y-4 text-gray-300">
             <p>
               These Terms are governed by the laws of [Jurisdiction], without regard to conflict of law principles. 
-              Any disputes arising from these Terms or your use of SportNet will be resolved through binding arbitration.
+              Any disputes arising from these Terms or your use of SportSYNC will be resolved through binding arbitration.
             </p>
             <p>
               Before initiating any legal proceedings, you agree to first attempt to resolve disputes through 

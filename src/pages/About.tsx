@@ -43,7 +43,7 @@ export default function About() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center space-y-4"
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-white">About SportNet</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-white">About SportSYNC</h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
             Connecting athletes, coaches, and teams worldwide to build the future of sports
           </p>
@@ -61,7 +61,7 @@ export default function About() {
             <h2 className="text-2xl font-bold text-white">Our Mission</h2>
           </div>
           <p className="text-gray-300 text-lg leading-relaxed">
-            SportNet was founded with a simple yet powerful vision: to create a global platform where 
+            SportSYNC was founded with a simple yet powerful vision: to create a global platform where 
             athletes, coaches, and teams can connect, collaborate, and grow together. We believe that 
             sports have the power to unite people across all boundaries, and our platform serves as 
             the bridge that makes these meaningful connections possible.
@@ -103,13 +103,13 @@ export default function About() {
           </div>
           <div className="space-y-4 text-gray-300">
             <p>
-              SportNet began in 2020 when our founder, a former professional athlete, 
+              SportSYNC began in 2020 when our founder, a former professional athlete, 
               experienced firsthand the challenges of finding the right connections in the sports world. 
               Whether it was discovering new talent, finding the perfect coach, or building a team, 
               the process was often fragmented and inefficient.
             </p>
             <p>
-              Today, SportNet has grown into a thriving community of over 50,000 active users across 
+              Today, SportSYNC has grown into a thriving community of over 50,000 active users across 
               25 countries. We've facilitated thousands of meaningful connections, helped athletes 
               find their dream teams, and enabled coaches to discover exceptional talent.
             </p>

@@ -1,4 +1,4 @@
-export const APP_NAME = 'SportNet';
+export const APP_NAME = 'SportSYNC';
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB for videos
 export const MESSAGE_MAX_LENGTH = 1000;
@@ -22,9 +22,9 @@ export const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'text/plain'];
 export const BLOCKED_FILE_EXTENSIONS = ['.exe', '.bat', '.cmd', '.scr', '.pif', '.com', '.jar', '.js', '.vbs', '.php', '.asp', '.jsp'];
 
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'sportnet_auth_token',
-  USER_PREFERENCES: 'sportnet_user_preferences',
-  CSRF_TOKEN: 'sportnet_csrf_token'
+  AUTH_TOKEN: 'sportsync_auth_token',
+  USER_PREFERENCES: 'sportsync_user_preferences',
+  CSRF_TOKEN: 'sportsync_csrf_token'
 } as const;
 
 export const ERROR_MESSAGES = {
@@ -144,7 +144,7 @@ export const CONFIG = {
     STRICT_CSP: false
   },
   PRODUCTION: {
-    API_BASE_URL: 'https://api.sportnet.com',
+    API_BASE_URL: 'https://api.sportsync.com',
     ENABLE_DEBUG_LOGS: false,
     ENABLE_MOCK_DATA: false,
     STRICT_CSP: true

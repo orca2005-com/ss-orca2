@@ -1,8 +1,8 @@
-# DDoS Protection Guide for SportNet
+# DDoS Protection Guide for SportSYNC
 
 ## Current Protection Level: **BASIC** 🟡
 
-Your SportNet application has basic DDoS protection but needs additional measures for enterprise-level security.
+Your SportSYNC application has basic DDoS protection but needs additional measures for enterprise-level security.
 
 ## ✅ What's Protected
 

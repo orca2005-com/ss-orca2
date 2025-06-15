@@ -45,7 +45,7 @@ function App() {
             <div className="logo-container">
               <img 
                 src="/Group_2__6_-removebg-preview.png" 
-                alt="SportNet Logo" 
+                alt="SportSYNC Logo" 
                 className="logo-animated w-24 h-24 md:w-32 md:h-32 object-contain"
               />
             </div>
@@ -53,7 +53,7 @@ function App() {
           
           {/* App Name with Fade-in Animation */}
           <div className="app-name-animated">
-            <p className="text-accent text-xl md:text-2xl font-bold tracking-wide">SportNet</p>
+            <p className="text-accent text-xl md:text-2xl font-bold tracking-wide">SportSYNC</p>
           </div>
         </div>
       </div>
