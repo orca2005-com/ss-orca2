@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Filter, Image as ImageIcon, Send, X, Video, Plus, ChevronDown } from 'lucide-react';
 import { FeedItem } from '../components/feed/FeedItem';
-import { SuggestedConnections } from '../components/feed/SuggestedConnections';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { mockProfiles } from '../data/mockProfiles';
 import { useNavigate } from 'react-router-dom';
@@ -105,37 +104,6 @@ const mockPosts = [
   },
 ];
 
-const suggestedConnections = [
-  {
-    id: '3',
-    name: 'Sarah Johnson',
-    role: 'Coach',
-    avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg',
-    mutualConnections: 15,
-  },
-  {
-    id: '4',
-    name: 'Mike Rodriguez',
-    role: 'Player',
-    avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg',
-    mutualConnections: 8,
-  },
-  {
-    id: '5',
-    name: 'Thunder Basketball Club',
-    role: 'Team',
-    avatar: 'https://images.pexels.com/photos/1752757/pexels-photo-1752757.jpeg',
-    mutualConnections: 12,
-  },
-  {
-    id: '6',
-    name: 'Coach Martinez',
-    role: 'Coach',
-    avatar: 'https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg',
-    mutualConnections: 6,
-  },
-];
-
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -145,9 +113,6 @@ export default function Home() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [posts, setPosts] = useState<typeof mockPosts>([]);
-  const [connections, setConnections] = useState<typeof suggestedConnections>([]);
-  const [connectedUsers, setConnectedUsers] = useState<Set<string>>(new Set());
-  const [connectingUsers, setConnectingUsers] = useState<Set<string>>(new Set());
   const [newPost, setNewPost] = useState({
     content: '',
     media: [] as File[],
@@ -163,7 +128,6 @@ export default function Home() {
     const loadData = async () => {
       await new Promise(resolve => setTimeout(resolve, 800));
       setPosts(mockPosts);
-      setConnections(suggestedConnections);
       setIsLoading(false);
     };
 
@@ -180,31 +144,6 @@ export default function Home() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleConnect = async (connectionId: string) => {
-    if (connectedUsers.has(connectionId) || connectingUsers.has(connectionId)) return;
-
-    setConnectingUsers(prev => new Set([...prev, connectionId]));
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    setConnectedUsers(prev => new Set([...prev, connectionId]));
-    setConnectingUsers(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(connectionId);
-      return newSet;
-    });
-
-    // Remove from suggestions after connecting
-    setTimeout(() => {
-      setConnections(prev => prev.filter(conn => conn.id !== connectionId));
-    }, 2000);
-  };
-
-  const handleSeeMoreConnections = () => {
-    navigate('/search');
-  };
 
   const handleCreatePost = () => {
     if (!newPost.content.trim() && mediaFiles.length === 0) return;
@@ -350,91 +289,6 @@ export default function Home() {
             </div>
           </button>
         </div>
-
-        {/* Compact Suggested Connections - Mobile Only */}
-        {connections.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-dark-lighter rounded-xl p-3"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-white">Suggested for you</h3>
-              <span className="text-xs text-gray-400 bg-dark px-2 py-1 rounded-full">
-                {connections.length}
-              </span>
-            </div>
-            
-            <div className="flex space-x-2 overflow-x-auto pb-1">
-              {connections.slice(0, 4).map((connection, index) => (
-                <motion.div
-                  key={connection.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  className="flex-shrink-0 bg-dark rounded-lg p-2 w-24"
-                >
-                  <div className="text-center">
-                    <button
-                      onClick={() => navigate(`/profile/${connection.id}`)}
-                      className="block mx-auto mb-2 hover:scale-105 transition-transform"
-                    >
-                      <img
-                        src={connection.avatar}
-                        alt={connection.name}
-                        className="w-10 h-10 rounded-full object-cover border border-dark-light hover:border-accent transition-colors"
-                      />
-                    </button>
-                    <h4 className="text-xs font-medium text-white truncate mb-1">{connection.name.split(' ')[0]}</h4>
-                    <p className="text-xs text-gray-400 truncate mb-2">{connection.role}</p>
-                    
-                    {connectedUsers.has(connection.id) ? (
-                      <div className="w-full bg-green-500/20 text-green-400 text-xs py-1 rounded-md font-medium border border-green-500/30">
-                        Connected
-                      </div>
-                    ) : connectingUsers.has(connection.id) ? (
-                      <div className="w-full bg-accent/20 text-accent text-xs py-1 rounded-md font-medium flex items-center justify-center">
-                        <div className="w-2.5 h-2.5 border border-accent border-t-transparent rounded-full animate-spin mr-1" />
-                        <span>...</span>
-                      </div>
-                    ) : (
-                      <button 
-                        onClick={() => handleConnect(connection.id)}
-                        className="w-full bg-accent text-white text-xs py-1 rounded-md hover:bg-accent-dark transition-colors font-medium"
-                      >
-                        Connect
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-              
-              {/* See More Card */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 * Math.min(connections.length, 4) }}
-                className="flex-shrink-0 bg-dark rounded-lg p-2 w-24"
-              >
-                <div className="text-center h-full flex flex-col justify-center">
-                  <button
-                    onClick={handleSeeMoreConnections}
-                    className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-2 hover:bg-accent/30 transition-colors"
-                  >
-                    <Plus className="w-4 h-4 text-accent" />
-                  </button>
-                  <button 
-                    onClick={handleSeeMoreConnections}
-                    className="text-xs text-accent font-medium hover:text-accent-light transition-colors"
-                  >
-                    See More
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
 
         {/* Create Post */}
         <div className="bg-dark-lighter rounded-xl overflow-hidden">
@@ -705,8 +559,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Center Feed */}
-          <div className="col-span-6 space-y-6">
+          {/* Center Feed - Now spans more columns */}
+          <div className="col-span-9 space-y-6">
             {/* Create Post */}
             <div className="bg-dark-lighter rounded-xl overflow-hidden">
               <div className="p-4 space-y-4">
@@ -882,11 +736,6 @@ export default function Home() {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Right Sidebar - Restored SuggestedConnections */}
-          <div className="col-span-3 space-y-6">
-            <SuggestedConnections connections={connections} />
           </div>
         </div>
       </div>
