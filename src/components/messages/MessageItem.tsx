@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { Image, Trash2, Play, Maximize, Reply } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MediaViewer } from '../ui/MediaViewer';
+import { UserAvatar } from '../ui/UserAvatar';
 
 interface ReplyToMessage {
   id: string;
@@ -46,11 +47,6 @@ export function MessageItem({ message, isOwn, onDelete, onReply }: MessageItemPr
   const messageRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isLongPressing, setIsLongPressing] = useState(false);
-
-  const handleProfileClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate(`/profile/${message.sender.id}`);
-  };
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -176,16 +172,13 @@ export function MessageItem({ message, isOwn, onDelete, onReply }: MessageItemPr
         onTouchMove={handleTouchMove}
       >
         {!isOwn && (
-          <button
-            onClick={handleProfileClick}
-            className="mr-2 hover:scale-105 transition-transform"
-          >
-            <img
-              src={message.sender.avatar}
-              alt={message.sender.name}
-              className="w-6 h-6 rounded-full cursor-pointer hover:ring-2 hover:ring-accent transition-all"
-            />
-          </button>
+          <UserAvatar
+            userId={message.sender.id}
+            src={message.sender.avatar}
+            alt={message.sender.name}
+            size="sm"
+            className="mr-2"
+          />
         )}
         
         <div className={`max-w-[75%] ${isOwn ? 'items-end' : 'items-start'} relative`}>

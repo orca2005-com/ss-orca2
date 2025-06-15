@@ -7,6 +7,8 @@ import clsx from 'clsx';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { MediaGrid } from '../ui/MediaGrid';
 import { FollowButton } from '../ui/FollowButton';
+import { UserAvatar } from '../ui/UserAvatar';
+import { UserName } from '../ui/UserName';
 import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
 
 interface Comment {
@@ -60,11 +62,6 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
   const handleLike = () => {
     setLiked(!liked);
     setLikesCount(prev => liked ? prev - 1 : prev + 1);
-  };
-
-  const handleViewProfile = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate(`/profile/${post.author.id}`);
   };
 
   const handleAddComment = (e: React.FormEvent) => {
@@ -136,24 +133,23 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
       className="bg-dark-lighter rounded-xl p-4 space-y-4"
     >
       <div className="flex items-center justify-between">
-        <button 
-          className="flex items-center space-x-3 ultra-touch hover:bg-dark/50 rounded-lg p-2 -m-2 transition-colors"
-          onClick={handleViewProfile}
-        >
-          <OptimizedImage
-            src={getOptimizedPexelsUrl(post.author.avatar, 'low')}
+        <div className="flex items-center space-x-3">
+          <UserAvatar
+            userId={post.author.id}
+            src={post.author.avatar}
             alt={post.author.name}
-            className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all"
-            placeholder={createPlaceholderUrl(post.author.avatar)}
+            size="md"
             priority={false}
           />
           <div className="text-left">
-            <h3 className="font-semibold text-white hover:text-accent transition-colors cursor-pointer">
-              {post.author.name}
-            </h3>
+            <UserName
+              userId={post.author.id}
+              name={post.author.name}
+              className="font-semibold text-white"
+            />
             <span className="text-sm text-gray-400">{post.author.role}</span>
           </div>
-        </button>
+        </div>
 
         <div className="flex items-center space-x-2">
           {!isOwnPost && (
@@ -256,15 +252,20 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-start space-x-3 group"
                 >
-                  <img
+                  <UserAvatar
+                    userId={comment.author.id}
                     src={comment.author.avatar}
                     alt={comment.author.name}
-                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                    size="sm"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="bg-dark rounded-lg p-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-white">{comment.author.name}</span>
+                        <UserName
+                          userId={comment.author.id}
+                          name={comment.author.name}
+                          className="text-sm font-medium text-white"
+                        />
                         {comment.author.id === currentUserId && (
                           <button
                             onClick={() => handleDeleteComment(comment.id)}
@@ -286,10 +287,12 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
           )}
 
           <form onSubmit={handleAddComment} className="flex items-center space-x-2">
-            <img
+            <UserAvatar
+              userId={currentUserId}
               src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"
               alt="Your avatar"
-              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+              size="sm"
+              clickable={false}
             />
             <div className="flex-1 flex items-center space-x-2">
               <input
