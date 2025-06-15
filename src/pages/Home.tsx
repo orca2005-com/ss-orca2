@@ -290,25 +290,16 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Create Post */}
+        {/* Create Post - REMOVED DUPLICATE PROFILE PHOTO */}
         <div className="bg-dark-lighter rounded-xl overflow-hidden">
           <div className="p-4 space-y-4">
-            <div className="flex items-center space-x-3">
-              <button onClick={handleCurrentUserProfileClick}>
-                <img
-                  src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"
-                  alt="Profile"
-                  className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-accent transition-all"
-                />
-              </button>
-              <textarea
-                value={newPost.content}
-                onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                placeholder="What's on your mind?"
-                className="flex-1 bg-dark text-white placeholder-gray-400 rounded-lg px-4 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-accent ultra-touch"
-                rows={1}
-              />
-            </div>
+            <textarea
+              value={newPost.content}
+              onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+              placeholder="What's on your mind?"
+              className="w-full bg-dark text-white placeholder-gray-400 rounded-lg px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-accent ultra-touch"
+              rows={3}
+            />
 
             {mediaFiles.length > 0 && (
               <div className="grid grid-cols-2 gap-2">
@@ -561,25 +552,16 @@ export default function Home() {
 
           {/* Center Feed - Now spans more columns */}
           <div className="col-span-9 space-y-6">
-            {/* Create Post */}
+            {/* Create Post - REMOVED DUPLICATE PROFILE PHOTO */}
             <div className="bg-dark-lighter rounded-xl overflow-hidden">
               <div className="p-4 space-y-4">
-                <div className="flex items-center space-x-3">
-                  <button onClick={handleCurrentUserProfileClick}>
-                    <img
-                      src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"
-                      alt="Profile"
-                      className="w-12 h-12 rounded-full cursor-pointer hover:ring-2 hover:ring-accent transition-all"
-                    />
-                  </button>
-                  <textarea
-                    value={newPost.content}
-                    onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                    placeholder="Share your sports journey..."
-                    className="flex-1 bg-dark text-white placeholder-gray-400 rounded-lg px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-accent"
-                    rows={3}
-                  />
-                </div>
+                <textarea
+                  value={newPost.content}
+                  onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                  placeholder="Share your sports journey..."
+                  className="w-full bg-dark text-white placeholder-gray-400 rounded-lg px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-accent"
+                  rows={3}
+                />
 
                 {mediaFiles.length > 0 && (
                   <div className="grid grid-cols-2 gap-2">
