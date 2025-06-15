@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart, MessageCircle, Star, UserPlus, Trash2, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { UserAvatar } from '../ui/UserAvatar';
-import { UserName } from '../ui/UserName';
 
 interface NotificationItemProps {
   notification: {
@@ -52,6 +50,13 @@ export function NotificationItem({ notification, onMarkAsRead, onDelete }: Notif
   const Icon = notificationIcons[notification.type];
   const iconColor = notificationColors[notification.type];
 
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Get the profile ID from the user name
+    const profileId = userNameToIdMap[notification.user.name] || '3'; // Default to Sarah Johnson
+    navigate(`/profile/${profileId}`);
+  };
+
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete(notification.id);
@@ -63,9 +68,6 @@ export function NotificationItem({ notification, onMarkAsRead, onDelete }: Notif
       onMarkAsRead(notification.id);
     }
   };
-
-  // Get the profile ID from the user name
-  const profileId = userNameToIdMap[notification.user.name] || '3'; // Default to Sarah Johnson
 
   return (
     <motion.div
@@ -93,23 +95,28 @@ export function NotificationItem({ notification, onMarkAsRead, onDelete }: Notif
 
       <div className="flex items-center space-x-4 pr-8">
         <div className="relative">
-          <UserAvatar
-            userId={profileId}
-            src={notification.user.avatar}
-            alt={notification.user.name}
-            size="md"
-          />
+          <button
+            onClick={handleProfileClick}
+            className="hover:scale-105 transition-transform"
+          >
+            <img
+              src={notification.user.avatar}
+              alt={notification.user.name}
+              className="w-12 h-12 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all"
+            />
+          </button>
           <div className="absolute -bottom-1 -right-1 p-1 rounded-full bg-dark">
             <Icon className={`w-4 h-4 ${iconColor}`} />
           </div>
         </div>
         <div className="flex-1 min-w-0 notification-content">
           <p className="text-sm text-gray-300">
-            <UserName
-              userId={profileId}
-              name={notification.user.name}
-              className="font-medium text-white"
-            />{' '}
+            <button
+              onClick={handleProfileClick}
+              className="font-medium text-white hover:text-accent transition-colors"
+            >
+              {notification.user.name}
+            </button>{' '}
             {notification.content}
           </p>
           <p className="text-xs text-gray-400 mt-1">

@@ -5,8 +5,6 @@ import { Avatar } from './Avatar';
 import { Button } from './Button';
 import { Badge } from './Badge';
 import { Card } from './Card';
-import { UserAvatar } from './UserAvatar';
-import { UserName } from './UserName';
 
 interface Connection {
   id: string;
@@ -81,25 +79,26 @@ export function ConnectionCard({
         )}
 
         <div className="flex items-start space-x-4">
-          <UserAvatar
-            userId={connection.id}
+          <Avatar
             src={connection.avatar}
             alt={connection.name}
             size="lg"
+            onClick={handleViewProfile}
             priority={index < 2}
           />
 
           <div className="flex-1 min-w-0">
-            <div className="block w-full text-left group/profile">
-              <UserName
-                userId={connection.id}
-                name={connection.name}
-                className="font-semibold text-white text-sm md:text-base truncate"
-              />
+            <button
+              onClick={handleViewProfile}
+              className="block w-full text-left group/profile"
+            >
+              <h3 className="font-semibold text-white group-hover/profile:text-accent transition-colors duration-200 truncate text-sm md:text-base">
+                {connection.name}
+              </h3>
               <p className="text-xs md:text-sm text-gray-400 mb-2 truncate">
                 {connection.role}
               </p>
-            </div>
+            </button>
 
             {showMutualConnections && connection.mutualConnections !== undefined && (
               <div className="mb-3">
