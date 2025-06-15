@@ -60,7 +60,7 @@ export function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className={clsx(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-200',
+        'fixed top-0 left-0 right-0 z-50 transition-all duration-200 safe-area-inset-top',
         isScrolled ? 'bg-dark/95 backdrop-blur-sm shadow-lg py-2' : 'bg-dark py-3'
       )}
     >
@@ -71,21 +71,21 @@ export function Navbar() {
             {isLegalPage && (
               <Link
                 to="/home"
-                className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 text-gray-400 hover:text-accent ultra-touch"
+                className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 text-gray-400 hover:text-accent ultra-touch min-h-touch"
               >
                 <Home className="w-5 h-5" />
-                <span className="text-sm font-medium">Home</span>
+                <span className="text-sm font-medium hidden sm:inline">Home</span>
               </Link>
             )}
             
-            {/* Logo and Brand */}
-            <Link to="/home" className="flex items-center space-x-3">
+            {/* Logo and Brand - MOBILE OPTIMIZED */}
+            <Link to="/home" className="flex items-center space-x-2 md:space-x-3 ultra-touch">
               <img 
                 src="/Group_2__6_-removebg-preview.png" 
                 alt="SportSYNC Logo" 
-                className="w-8 h-8 object-contain"
+                className="w-6 h-6 md:w-8 md:h-8 object-contain"
               />
-              <span className="text-xl font-bold text-accent">SportSYNC</span>
+              <span className="text-lg md:text-xl font-bold text-accent">SportSYNC</span>
             </Link>
           </div>
 
@@ -105,7 +105,7 @@ export function Navbar() {
                   key={item.path}
                   to={item.path}
                   className={clsx(
-                    'relative group px-3 py-2 rounded-lg transition-colors duration-200',
+                    'relative group px-3 py-2 rounded-lg transition-colors duration-200 min-h-touch',
                     isActive ? 'text-accent' : 'text-gray-400 hover:text-white'
                   )}
                 >
@@ -132,7 +132,7 @@ export function Navbar() {
               <button
                 onClick={handleProfileClick}
                 className={clsx(
-                  'relative group px-3 py-2 rounded-lg transition-colors duration-200',
+                  'relative group px-3 py-2 rounded-lg transition-colors duration-200 min-h-touch',
                   location.pathname === `/profile/${user.id}` ? 'text-accent' : 'text-gray-400 hover:text-white'
                 )}
               >
@@ -152,7 +152,7 @@ export function Navbar() {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="relative group px-3 py-2 rounded-lg transition-colors duration-200 text-gray-400 hover:text-white"
+                className="relative group px-3 py-2 rounded-lg transition-colors duration-200 text-gray-400 hover:text-white min-h-touch"
               >
                 <div className="relative flex items-center justify-center">
                   <motion.div
@@ -184,7 +184,7 @@ export function Navbar() {
                         <Link
                           to={item.path}
                           onClick={() => setIsMenuOpen(false)}
-                          className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200"
+                          className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200 min-h-touch ultra-touch"
                         >
                           <span>{item.label}</span>
                         </Link>
@@ -196,11 +196,12 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* MOBILE: Enhanced Menu Button with better touch target */}
           <div className="md:hidden relative" ref={menuRef}>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="relative group p-2 rounded-lg transition-colors duration-200 text-gray-400 hover:text-white ultra-touch"
+              className="relative group p-3 rounded-lg transition-colors duration-200 text-gray-400 hover:text-white ultra-touch min-h-touch-lg min-w-touch-lg"
+              aria-label="Toggle menu"
             >
               <motion.div
                 animate={{ rotate: isMenuOpen ? 180 : 0 }}
@@ -210,7 +211,7 @@ export function Navbar() {
               </motion.div>
             </button>
 
-            {/* Mobile Dropdown Menu - Fixed positioning */}
+            {/* MOBILE: Enhanced Dropdown Menu */}
             <AnimatePresence>
               {isMenuOpen && (
                 <motion.div
@@ -218,7 +219,7 @@ export function Navbar() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute right-0 top-full mt-2 w-56 bg-dark-lighter border border-dark-light rounded-lg shadow-lg overflow-hidden z-50"
+                  className="absolute right-0 top-full mt-2 w-64 bg-dark-lighter border border-dark-light rounded-lg shadow-lg overflow-hidden z-50"
                   style={{ 
                     right: '0',
                     left: 'auto',
@@ -235,7 +236,7 @@ export function Navbar() {
                       <Link
                         to={item.path}
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200"
+                        className="flex items-center space-x-3 px-4 py-4 text-base text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200 min-h-touch-lg ultra-touch"
                       >
                         <span>{item.label}</span>
                       </Link>
