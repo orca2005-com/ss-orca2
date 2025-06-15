@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Edit2, Check, X, Camera, MapPin, Link as LinkIcon, Share2, Star, Award, Users, UserPlus, UserCheck } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Edit2, Check, X, Camera, MapPin, Link as LinkIcon, Share2, Star, Award, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { createPortal } from 'react-dom';
@@ -9,6 +9,8 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
+import { FollowButton } from '../ui/FollowButton';
+import { StatsDisplay } from '../ui/StatsDisplay';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
 
@@ -84,8 +86,6 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
   const [isHoveringCover, setIsHoveringCover] = useState(false);
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
-  const [followStatus, setFollowStatus] = useState<'none' | 'following' | 'follows_you'>('none');
-  const [isFollowLoading, setIsFollowLoading] = useState(false);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
 
   const { getRootProps: getAvatarProps, getInputProps: getAvatarInputProps } = useDropzone({
@@ -101,31 +101,6 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
     onDrop: (acceptedFiles) => setNewCoverImage(acceptedFiles[0]),
     disabled: !isEditing
   });
-
-  // Initialize follow status for non-editable profiles (other users)
-  useEffect(() => {
-    if (!canEdit) {
-      // Simulate checking follow status - Instagram-like logic
-      const checkFollowStatus = () => {
-        // For demo purposes, randomly assign follow status
-        // In real app, this would come from your backend
-        const random = Math.random();
-        
-        if (random < 0.3) {
-          // 30% chance they follow you (so you can follow back)
-          setFollowStatus('follows_you');
-        } else if (random < 0.6) {
-          // 30% chance you're already following them
-          setFollowStatus('following');
-        } else {
-          // 40% chance no relationship
-          setFollowStatus('none');
-        }
-      };
-      
-      setTimeout(checkFollowStatus, 100);
-    }
-  }, [canEdit, profile.id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = e.target.value.slice(0, 150);
@@ -145,27 +120,6 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
     setNewAvatar(null);
     setNewCoverImage(null);
     onEditingChange(false);
-  };
-
-  const handleFollow = async () => {
-    setIsFollowLoading(true);
-    
-    // Simulate follow/unfollow process
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Update follow status based on current state - Instagram logic
-    if (followStatus === 'none') {
-      // When you follow someone new
-      setFollowStatus('following');
-    } else if (followStatus === 'follows_you') {
-      // When you follow back someone who follows you
-      setFollowStatus('following');
-    } else if (followStatus === 'following') {
-      // When you unfollow someone
-      setFollowStatus('none');
-    }
-    
-    setIsFollowLoading(false);
   };
 
   const handleShare = async (platform: 'facebook' | 'twitter' | 'linkedin' | 'copy') => {
@@ -194,33 +148,6 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
     setShowShareOptions(false);
   };
 
-  // Instagram-like follow button logic
-  const getFollowButtonText = () => {
-    if (followStatus === 'follows_you') return 'Follow Back';
-    if (followStatus === 'following') return 'Following';
-    return 'Follow';
-  };
-
-  const getFollowButtonIcon = () => {
-    if (followStatus === 'following') {
-      return UserCheck;
-    }
-    return UserPlus;
-  };
-
-  const getFollowButtonStyle = () => {
-    if (followStatus === 'follows_you') {
-      // Special styling for "Follow Back" - more prominent like Instagram
-      return 'bg-blue-500 text-white hover:bg-blue-600';
-    }
-    if (followStatus === 'following') {
-      // Subtle styling when already following
-      return 'bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30';
-    }
-    // Default follow button
-    return 'bg-accent text-white hover:bg-accent-dark';
-  };
-
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'player': return Star;
@@ -239,7 +166,11 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
     }
   };
 
-  const FollowIcon = getFollowButtonIcon();
+  // Prepare stats for StatsDisplay component
+  const stats = [
+    { label: 'Followers', value: formData.stats.followers },
+    { label: 'Following', value: formData.stats.following }
+  ];
 
   return (
     <div className="relative">
@@ -464,33 +395,12 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                     </motion.div>
                   )}
 
-                  {/* Enhanced Stats - Updated to show Followers and Following */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="flex items-center justify-center lg:justify-start space-x-8"
-                  >
-                    <div className="text-center group cursor-pointer">
-                      <div className="relative">
-                        <p className="text-2xl md:text-3xl font-bold text-white group-hover:text-accent transition-colors">
-                          {formData.stats.followers}
-                        </p>
-                        <div className="absolute -inset-2 bg-accent/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
-                      </div>
-                      <p className="text-sm text-gray-400 font-medium">Followers</p>
-                    </div>
-                    <div className="w-px h-12 bg-white/20" />
-                    <div className="text-center group cursor-pointer">
-                      <div className="relative">
-                        <p className="text-2xl md:text-3xl font-bold text-white group-hover:text-accent transition-colors">
-                          {formData.stats.following}
-                        </p>
-                        <div className="absolute -inset-2 bg-accent/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
-                      </div>
-                      <p className="text-sm text-gray-400 font-medium">Following</p>
-                    </div>
-                  </motion.div>
+                  {/* Enhanced Stats - Using StatsDisplay component */}
+                  <StatsDisplay 
+                    stats={stats}
+                    layout="horizontal"
+                    size="md"
+                  />
                 </div>
               </div>
 
@@ -542,22 +452,10 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                 ) : (
                   <div className="flex flex-col space-y-3">
                     {/* Follow Button for Other Users */}
-                    <motion.button
-                      onClick={handleFollow}
-                      disabled={isFollowLoading}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ultra-touch disabled:opacity-50 disabled:cursor-not-allowed ${getFollowButtonStyle()}`}
-                    >
-                      {isFollowLoading ? (
-                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <FollowIcon className="w-5 h-5" />
-                          <span>{getFollowButtonText()}</span>
-                        </>
-                      )}
-                    </motion.button>
+                    <FollowButton 
+                      userId={profile.id}
+                      size="lg"
+                    />
 
                     {/* Share Button */}
                     <Button

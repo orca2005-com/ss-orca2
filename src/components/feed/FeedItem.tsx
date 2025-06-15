@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Send, MoreHorizontal, EyeOff, UserPlus, UserCheck } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Send, MoreHorizontal, EyeOff } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { MediaGrid } from '../ui/MediaGrid';
+import { FollowButton } from '../ui/FollowButton';
 import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
 
 interface Comment {
@@ -52,36 +53,9 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
   const [commentsCount, setCommentsCount] = useState(post.comments);
   const [showPostMenu, setShowPostMenu] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
-  const [followStatus, setFollowStatus] = useState<'none' | 'following' | 'follows_you'>('none');
-  const [isFollowLoading, setIsFollowLoading] = useState(false);
   const postMenuRef = useRef<HTMLDivElement>(null);
 
   const isOwnPost = post.author.id === currentUserId;
-
-  // Simulate checking follow status - Instagram-like logic
-  useEffect(() => {
-    if (!isOwnPost) {
-      // Simulate API call to check follow status
-      const checkFollowStatus = () => {
-        // For demo purposes, randomly assign follow status
-        // In real app, this would come from your backend
-        const random = Math.random();
-        
-        if (random < 0.3) {
-          // 30% chance they follow you (so you can follow back)
-          setFollowStatus('follows_you');
-        } else if (random < 0.6) {
-          // 30% chance you're already following them
-          setFollowStatus('following');
-        } else {
-          // 40% chance no relationship
-          setFollowStatus('none');
-        }
-      };
-      
-      setTimeout(checkFollowStatus, 100);
-    }
-  }, [isOwnPost, post.author.id]);
 
   const handleLike = () => {
     setLiked(!liked);
@@ -91,27 +65,6 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
   const handleViewProfile = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/profile/${post.author.id}`);
-  };
-
-  const handleFollow = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsFollowLoading(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Update follow status based on current state
-    if (followStatus === 'none') {
-      // When you follow someone new
-      setFollowStatus('following');
-    } else if (followStatus === 'follows_you') {
-      // When you follow back someone who follows you
-      setFollowStatus('following');
-    } else if (followStatus === 'following') {
-      // When you unfollow someone
-      setFollowStatus('none');
-    }
-    
-    setIsFollowLoading(false);
   };
 
   const handleAddComment = (e: React.FormEvent) => {
@@ -170,35 +123,6 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
     title: `${post.author.name}'s ${media.type}`
   })) || [];
 
-  // Instagram-like follow button logic
-  const getFollowButtonText = () => {
-    if (followStatus === 'follows_you') return 'Follow Back';
-    if (followStatus === 'following') return 'Following';
-    return 'Follow';
-  };
-
-  const getFollowButtonIcon = () => {
-    if (followStatus === 'following') {
-      return UserCheck;
-    }
-    return UserPlus;
-  };
-
-  const getFollowButtonStyle = () => {
-    if (followStatus === 'follows_you') {
-      // Special styling for "Follow Back" - more prominent like Instagram
-      return 'bg-blue-500 text-white hover:bg-blue-600';
-    }
-    if (followStatus === 'following') {
-      // Subtle styling when already following
-      return 'bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30';
-    }
-    // Default follow button
-    return 'bg-accent text-white hover:bg-accent-dark';
-  };
-
-  const FollowIcon = getFollowButtonIcon();
-
   return (
     <motion.div
       initial={{ opacity: 1, scale: 1 }}
@@ -233,22 +157,12 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
 
         <div className="flex items-center space-x-2">
           {!isOwnPost && (
-            <motion.button
-              onClick={handleFollow}
-              disabled={isFollowLoading}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ultra-touch disabled:opacity-50 disabled:cursor-not-allowed ${getFollowButtonStyle()}`}
-            >
-              {isFollowLoading ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <FollowIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{getFollowButtonText()}</span>
-                </>
-              )}
-            </motion.button>
+            <FollowButton 
+              userId={post.author.id}
+              currentUserId={currentUserId}
+              size="sm"
+              showTextOnMobile={false}
+            />
           )}
 
           <div className="relative" ref={postMenuRef}>

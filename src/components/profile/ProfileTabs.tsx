@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Tab } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Image, Trophy, Users, Plus, X, ChevronRight, Award, Sparkles, TrendingUp, UserPlus } from 'lucide-react';
+import { Image, Trophy, Users, Plus, X, Award, UserPlus } from 'lucide-react';
 import { MediaGrid } from '../ui/MediaGrid';
+import { TabSection } from '../ui/TabSection';
+import { UserListItem } from '../ui/UserListItem';
 
 interface ProfileTabsProps {
   isPrivate?: boolean;
@@ -17,13 +19,6 @@ interface ProfileTabsProps {
   onUpdateCertifications?: (certifications: string[]) => void;
   userRole?: 'player' | 'team' | 'coach';
 }
-
-const containerAnimation = {
-  initial: { scale: 0.95, opacity: 0 },
-  animate: { scale: 1, opacity: 1 },
-  exit: { scale: 0.95, opacity: 0 },
-  transition: { type: "spring", stiffness: 300, damping: 30 }
-};
 
 export function ProfileTabs({
   isPrivate = false,
@@ -187,102 +182,155 @@ export function ProfileTabs({
         {/* Enhanced Tab Panels */}
         <Tab.Panels className="mt-6">
           <AnimatePresence mode="wait">
-            {/* Posts Tab - Enhanced */}
+            {/* Posts Tab */}
             <Tab.Panel className="rounded-2xl bg-dark-lighter/60 backdrop-blur-xl p-4 md:p-6 border border-white/10">
-              <motion.div {...containerAnimation}>
-                <div className="space-y-4 md:space-y-6">
-                  {/* Header */}
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-400/20 rounded-xl flex items-center justify-center">
-                      <Image className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">Posts & Media</h3>
-                      <p className="text-sm text-gray-400">{posts.length} posts shared</p>
-                    </div>
-                  </div>
-
-                  {visiblePosts.length > 0 ? (
-                    visiblePosts.map((post) => {
-                      const mediaItems = getPostMedia(post);
-                      
-                      return (
-                        <motion.div
-                          key={post.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -20 }}
-                          className="bg-dark/50 rounded-xl p-4 md:p-6 relative space-y-4 border border-white/5 hover:border-white/10 transition-colors group"
-                        >
-                          <p className="text-gray-200 text-sm md:text-base leading-relaxed">{post.content}</p>
-                          
-                          {mediaItems.length > 0 && (
-                            <MediaGrid 
-                              media={mediaItems}
-                              maxItems={4}
-                              showViewAll={true}
-                            />
-                          )}
-                          
-                          {isEditing && (
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => handleRemovePost(post.id)}
-                              className="absolute top-3 right-3 p-2 bg-red-500/20 rounded-lg text-red-400 hover:bg-red-500/30 transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              <X className="w-4 h-4" />
-                            </motion.button>
-                          )}
-                        </motion.div>
-                      );
-                    })
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-blue-400/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <Image className="w-8 h-8 text-blue-400" />
-                      </div>
-                      <p className="text-gray-400 text-lg font-medium">No posts yet</p>
-                      <p className="text-gray-500 text-sm">Share your first post to get started</p>
-                    </div>
-                  )}
-
-                  {posts.length > 2 && (
-                    <motion.button
-                      onClick={() => setShowAllPosts(!showAllPosts)}
-                      className="flex items-center justify-center space-x-2 w-full py-3 text-accent hover:text-accent-light transition-colors font-medium bg-accent/10 hover:bg-accent/20 rounded-xl"
+              <TabSection
+                icon={Image}
+                title="Posts & Media"
+                subtitle={`${posts.length} posts shared`}
+                iconColor="blue"
+                emptyState={{
+                  icon: Image,
+                  title: "No posts yet",
+                  subtitle: "Share your first post to get started"
+                }}
+                showAllButton={posts.length > 2 ? {
+                  totalCount: posts.length,
+                  isExpanded: showAllPosts,
+                  onToggle: () => setShowAllPosts(!showAllPosts),
+                  itemName: "Posts"
+                } : undefined}
+              >
+                {visiblePosts.map((post) => {
+                  const mediaItems = getPostMedia(post);
+                  
+                  return (
+                    <motion.div
+                      key={post.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="bg-dark/50 rounded-xl p-4 md:p-6 relative space-y-4 border border-white/5 hover:border-white/10 transition-colors group"
                     >
-                      <span>{showAllPosts ? 'Show Less' : `Show All ${posts.length} Posts`}</span>
-                      <ChevronRight className={`w-4 h-4 transform transition-transform ${showAllPosts ? 'rotate-90' : ''}`} />
-                    </motion.button>
-                  )}
-                </div>
-              </motion.div>
+                      <p className="text-gray-200 text-sm md:text-base leading-relaxed">{post.content}</p>
+                      
+                      {mediaItems.length > 0 && (
+                        <MediaGrid 
+                          media={mediaItems}
+                          maxItems={4}
+                          showViewAll={true}
+                        />
+                      )}
+                      
+                      {isEditing && (
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleRemovePost(post.id)}
+                          className="absolute top-3 right-3 p-2 bg-red-500/20 rounded-lg text-red-400 hover:bg-red-500/30 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <X className="w-4 h-4" />
+                        </motion.button>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </TabSection>
             </Tab.Panel>
 
-            {/* Achievements Tab - Enhanced */}
+            {/* Achievements Tab */}
             <Tab.Panel className="rounded-2xl bg-dark-lighter/60 backdrop-blur-xl p-4 md:p-6 border border-white/10">
-              <motion.div {...containerAnimation}>
-                <div className="space-y-4 md:space-y-6">
-                  {/* Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-yellow-400/20 rounded-xl flex items-center justify-center">
-                        <Trophy className="w-5 h-5 text-yellow-400" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">Achievements</h3>
-                        <p className="text-sm text-gray-400">{achievements.length} accomplishments</p>
-                      </div>
-                    </div>
-                    {achievements.length > 0 && (
-                      <div className="flex items-center space-x-2 text-yellow-400">
-                        <Sparkles className="w-4 h-4" />
-                        <span className="text-sm font-medium">Verified</span>
-                      </div>
-                    )}
-                  </div>
+              <TabSection
+                icon={Trophy}
+                title="Achievements"
+                subtitle={`${achievements.length} accomplishments`}
+                iconColor="yellow"
+                emptyState={{
+                  icon: Trophy,
+                  title: "No achievements yet",
+                  subtitle: "Add your accomplishments to showcase your success"
+                }}
+                showAllButton={achievements.length > 3 ? {
+                  totalCount: achievements.length,
+                  isExpanded: showAllAchievements,
+                  onToggle: () => setShowAllAchievements(!showAllAchievements),
+                  itemName: "Achievements"
+                } : undefined}
+              >
+                {isEditing && (
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="space-y-3 p-4 bg-dark/30 rounded-xl border border-white/10"
+                  >
+                    <input
+                      type="text"
+                      value={newAchievement}
+                      onChange={(e) => setNewAchievement(e.target.value)}
+                      placeholder="Add new achievement..."
+                      className="w-full bg-dark/50 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent border border-white/10 backdrop-blur-sm"
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleAddAchievement}
+                      className="w-full px-4 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors font-medium flex items-center justify-center space-x-2"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Add Achievement</span>
+                    </motion.button>
+                  </motion.div>
+                )}
 
+                {visibleAchievements.map((achievement, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="group flex items-start space-x-4 bg-dark/50 rounded-xl p-4 border border-white/5 hover:border-yellow-400/30 transition-colors"
+                  >
+                    <div className="w-8 h-8 bg-yellow-400/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                      <Trophy className="w-4 h-4 text-yellow-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-200 leading-relaxed">{achievement}</p>
+                    </div>
+                    {isEditing && (
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleRemoveAchievement(index)}
+                        className="p-2 text-red-400 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </motion.button>
+                    )}
+                  </motion.div>
+                ))}
+              </TabSection>
+            </Tab.Panel>
+
+            {/* Certifications Tab (Only for Coaches) */}
+            {userRole === 'coach' && (
+              <Tab.Panel className="rounded-2xl bg-dark-lighter/60 backdrop-blur-xl p-4 md:p-6 border border-white/10">
+                <TabSection
+                  icon={Award}
+                  title="Professional Certifications"
+                  subtitle={`${certifications.length} credentials`}
+                  iconColor="purple"
+                  emptyState={{
+                    icon: Award,
+                    title: "No certifications added",
+                    subtitle: "Showcase your professional credentials"
+                  }}
+                  showAllButton={certifications.length > 3 ? {
+                    totalCount: certifications.length,
+                    isExpanded: showAllCertifications,
+                    onToggle: () => setShowAllCertifications(!showAllCertifications),
+                    itemName: "Certifications"
+                  } : undefined}
+                >
                   {isEditing && (
                     <motion.div
                       initial={{ scale: 0.95, opacity: 0 }}
@@ -291,311 +339,113 @@ export function ProfileTabs({
                     >
                       <input
                         type="text"
-                        value={newAchievement}
-                        onChange={(e) => setNewAchievement(e.target.value)}
-                        placeholder="Add new achievement..."
+                        value={newCertification}
+                        onChange={(e) => setNewCertification(e.target.value)}
+                        placeholder="Add new certification..."
                         className="w-full bg-dark/50 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent border border-white/10 backdrop-blur-sm"
                       />
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={handleAddAchievement}
+                        onClick={handleAddCertification}
                         className="w-full px-4 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors font-medium flex items-center justify-center space-x-2"
                       >
                         <Plus className="w-5 h-5" />
-                        <span>Add Achievement</span>
+                        <span>Add Certification</span>
                       </motion.button>
                     </motion.div>
                   )}
-
-                  {visibleAchievements.length > 0 ? (
-                    <div className="space-y-3">
-                      {visibleAchievements.map((achievement, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="group flex items-start space-x-4 bg-dark/50 rounded-xl p-4 border border-white/5 hover:border-yellow-400/30 transition-colors"
-                        >
-                          <div className="w-8 h-8 bg-yellow-400/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                            <Trophy className="w-4 h-4 text-yellow-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-gray-200 leading-relaxed">{achievement}</p>
-                          </div>
-                          {isEditing && (
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => handleRemoveAchievement(index)}
-                              className="p-2 text-red-400 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
-                            >
-                              <X className="w-4 h-4" />
-                            </motion.button>
-                          )}
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-yellow-400/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <Trophy className="w-8 h-8 text-yellow-400" />
-                      </div>
-                      <p className="text-gray-400 text-lg font-medium">No achievements yet</p>
-                      <p className="text-gray-500 text-sm">Add your accomplishments to showcase your success</p>
-                    </div>
-                  )}
-
-                  {achievements.length > 3 && (
-                    <motion.button
-                      onClick={() => setShowAllAchievements(!showAllAchievements)}
-                      className="flex items-center justify-center space-x-2 w-full py-3 text-yellow-400 hover:text-yellow-300 transition-colors font-medium bg-yellow-400/10 hover:bg-yellow-400/20 rounded-xl"
+                  
+                  {visibleCertifications.map((certification, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="group bg-dark/50 rounded-xl p-4 border border-white/5 hover:border-purple-400/30 transition-colors"
                     >
-                      <span>{showAllAchievements ? 'Show Less' : `Show All ${achievements.length} Achievements`}</span>
-                      <ChevronRight className={`w-4 h-4 transform transition-transform ${showAllAchievements ? 'rotate-90' : ''}`} />
-                    </motion.button>
-                  )}
-                </div>
-              </motion.div>
-            </Tab.Panel>
-
-            {/* Certifications Tab (Only for Coaches) - Enhanced */}
-            {userRole === 'coach' && (
-              <Tab.Panel className="rounded-2xl bg-dark-lighter/60 backdrop-blur-xl p-4 md:p-6 border border-white/10">
-                <motion.div {...containerAnimation}>
-                  <div className="space-y-4 md:space-y-6">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-purple-400/20 rounded-xl flex items-center justify-center">
-                          <Award className="w-5 h-5 text-purple-400" />
+                      <div className="flex items-start space-x-4">
+                        <div className="w-8 h-8 bg-purple-400/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                          <Award className="w-4 h-4 text-purple-400" />
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">Professional Certifications</h3>
-                          <p className="text-sm text-gray-400">{certifications.length} credentials</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-200 leading-relaxed break-words">{certification}</p>
                         </div>
-                      </div>
-                      {certifications.length > 0 && (
-                        <div className="flex items-center space-x-2 text-purple-400">
-                          <TrendingUp className="w-4 h-4" />
-                          <span className="text-sm font-medium">Certified</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {isEditing && (
-                      <motion.div
-                        initial={{ scale: 0.95, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="space-y-3 p-4 bg-dark/30 rounded-xl border border-white/10"
-                      >
-                        <input
-                          type="text"
-                          value={newCertification}
-                          onChange={(e) => setNewCertification(e.target.value)}
-                          placeholder="Add new certification..."
-                          className="w-full bg-dark/50 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent border border-white/10 backdrop-blur-sm"
-                        />
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={handleAddCertification}
-                          className="w-full px-4 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors font-medium flex items-center justify-center space-x-2"
-                        >
-                          <Plus className="w-5 h-5" />
-                          <span>Add Certification</span>
-                        </motion.button>
-                      </motion.div>
-                    )}
-                    
-                    {visibleCertifications.length > 0 ? (
-                      <div className="space-y-3">
-                        {visibleCertifications.map((certification, index) => (
-                          <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="group bg-dark/50 rounded-xl p-4 border border-white/5 hover:border-purple-400/30 transition-colors"
+                        {isEditing && (
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleRemoveCertification(index)}
+                            className="p-2 text-red-400 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
                           >
-                            <div className="flex items-start space-x-4">
-                              <div className="w-8 h-8 bg-purple-400/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                                <Award className="w-4 h-4 text-purple-400" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-gray-200 leading-relaxed break-words">{certification}</p>
-                              </div>
-                              {isEditing && (
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={() => handleRemoveCertification(index)}
-                                  className="p-2 text-red-400 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
-                                >
-                                  <X className="w-4 h-4" />
-                                </motion.button>
-                              )}
-                            </div>
-                          </motion.div>
-                        ))}
+                            <X className="w-4 h-4" />
+                          </motion.button>
+                        )}
                       </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 bg-purple-400/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                          <Award className="w-8 h-8 text-purple-400" />
-                        </div>
-                        <p className="text-gray-400 text-lg font-medium">No certifications added</p>
-                        <p className="text-gray-500 text-sm">Showcase your professional credentials</p>
-                      </div>
-                    )}
-                    
-                    {certifications.length > 3 && (
-                      <motion.button
-                        onClick={() => setShowAllCertifications(!showAllCertifications)}
-                        className="flex items-center justify-center space-x-2 w-full py-3 text-purple-400 hover:text-purple-300 transition-colors font-medium bg-purple-400/10 hover:bg-purple-400/20 rounded-xl"
-                      >
-                        <span>{showAllCertifications ? 'Show Less' : `Show All ${certifications.length} Certifications`}</span>
-                        <ChevronRight className={`w-4 h-4 transform transition-transform ${showAllCertifications ? 'rotate-90' : ''}`} />
-                      </motion.button>
-                    )}
-                  </div>
-                </motion.div>
+                    </motion.div>
+                  ))}
+                </TabSection>
               </Tab.Panel>
             )}
 
-            {/* Followers Tab - Enhanced */}
+            {/* Followers Tab */}
             <Tab.Panel className="rounded-2xl bg-dark-lighter/60 backdrop-blur-xl p-4 md:p-6 border border-white/10">
-              <motion.div {...containerAnimation}>
-                <div className="space-y-4 md:space-y-6">
-                  {/* Header */}
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-400/20 rounded-xl flex items-center justify-center">
-                      <Users className="w-5 h-5 text-green-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">Followers</h3>
-                      <p className="text-sm text-gray-400">{followers.length} followers</p>
-                    </div>
-                  </div>
-
-                  {visibleFollowers.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4">
-                      {visibleFollowers.map((follower) => (
-                        <motion.div
-                          key={follower.id}
-                          initial={{ scale: 0.95, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.95, opacity: 0 }}
-                          whileHover={{ scale: 1.02 }}
-                          className="flex items-center space-x-4 bg-dark/50 rounded-xl p-4 border border-white/5 hover:border-green-400/30 transition-all cursor-pointer group"
-                        >
-                          <div className="relative">
-                            <img 
-                              src={follower.avatar} 
-                              alt="" 
-                              className="w-12 h-12 rounded-xl object-cover border-2 border-white/10 group-hover:border-green-400/50 transition-colors" 
-                            />
-                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-dark-lighter" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-white group-hover:text-green-400 transition-colors truncate">{follower.name}</p>
-                            <p className="text-sm text-gray-400">{follower.role}</p>
-                          </div>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ChevronRight className="w-5 h-5 text-green-400" />
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-green-400/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <Users className="w-8 h-8 text-green-400" />
-                      </div>
-                      <p className="text-gray-400 text-lg font-medium">No followers yet</p>
-                      <p className="text-gray-500 text-sm">Start connecting with other athletes and coaches</p>
-                    </div>
-                  )}
-
-                  {followers.length > 3 && (
-                    <motion.button
-                      onClick={() => setShowAllFollowers(!showAllFollowers)}
-                      className="flex items-center justify-center space-x-2 w-full py-3 text-green-400 hover:text-green-300 transition-colors font-medium bg-green-400/10 hover:bg-green-400/20 rounded-xl"
-                    >
-                      <span>{showAllFollowers ? 'Show Less' : `Show All ${followers.length} Followers`}</span>
-                      <ChevronRight className={`w-4 h-4 transform transition-transform ${showAllFollowers ? 'rotate-90' : ''}`} />
-                    </motion.button>
-                  )}
-                </div>
-              </motion.div>
+              <TabSection
+                icon={Users}
+                title="Followers"
+                subtitle={`${followers.length} followers`}
+                iconColor="green"
+                emptyState={{
+                  icon: Users,
+                  title: "No followers yet",
+                  subtitle: "Start connecting with other athletes and coaches"
+                }}
+                showAllButton={followers.length > 3 ? {
+                  totalCount: followers.length,
+                  isExpanded: showAllFollowers,
+                  onToggle: () => setShowAllFollowers(!showAllFollowers),
+                  itemName: "Followers"
+                } : undefined}
+              >
+                {visibleFollowers.map((follower, index) => (
+                  <UserListItem
+                    key={follower.id}
+                    user={follower}
+                    index={index}
+                    hoverColor="green"
+                  />
+                ))}
+              </TabSection>
             </Tab.Panel>
 
-            {/* Following Tab - Enhanced */}
+            {/* Following Tab */}
             <Tab.Panel className="rounded-2xl bg-dark-lighter/60 backdrop-blur-xl p-4 md:p-6 border border-white/10">
-              <motion.div {...containerAnimation}>
-                <div className="space-y-4 md:space-y-6">
-                  {/* Header */}
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-400/20 rounded-xl flex items-center justify-center">
-                      <UserPlus className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">Following</h3>
-                      <p className="text-sm text-gray-400">{following.length} following</p>
-                    </div>
-                  </div>
-
-                  {visibleFollowing.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4">
-                      {visibleFollowing.map((followingUser) => (
-                        <motion.div
-                          key={followingUser.id}
-                          initial={{ scale: 0.95, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.95, opacity: 0 }}
-                          whileHover={{ scale: 1.02 }}
-                          className="flex items-center space-x-4 bg-dark/50 rounded-xl p-4 border border-white/5 hover:border-blue-400/30 transition-all cursor-pointer group"
-                        >
-                          <div className="relative">
-                            <img 
-                              src={followingUser.avatar} 
-                              alt="" 
-                              className="w-12 h-12 rounded-xl object-cover border-2 border-white/10 group-hover:border-blue-400/50 transition-colors" 
-                            />
-                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-400 rounded-full border-2 border-dark-lighter" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-white group-hover:text-blue-400 transition-colors truncate">{followingUser.name}</p>
-                            <p className="text-sm text-gray-400">{followingUser.role}</p>
-                          </div>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ChevronRight className="w-5 h-5 text-blue-400" />
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-blue-400/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <UserPlus className="w-8 h-8 text-blue-400" />
-                      </div>
-                      <p className="text-gray-400 text-lg font-medium">Not following anyone yet</p>
-                      <p className="text-gray-500 text-sm">Start following other athletes and coaches</p>
-                    </div>
-                  )}
-
-                  {following.length > 3 && (
-                    <motion.button
-                      onClick={() => setShowAllFollowing(!showAllFollowing)}
-                      className="flex items-center justify-center space-x-2 w-full py-3 text-blue-400 hover:text-blue-300 transition-colors font-medium bg-blue-400/10 hover:bg-blue-400/20 rounded-xl"
-                    >
-                      <span>{showAllFollowing ? 'Show Less' : `Show All ${following.length} Following`}</span>
-                      <ChevronRight className={`w-4 h-4 transform transition-transform ${showAllFollowing ? 'rotate-90' : ''}`} />
-                    </motion.button>
-                  )}
-                </div>
-              </motion.div>
+              <TabSection
+                icon={UserPlus}
+                title="Following"
+                subtitle={`${following.length} following`}
+                iconColor="blue"
+                emptyState={{
+                  icon: UserPlus,
+                  title: "Not following anyone yet",
+                  subtitle: "Start following other athletes and coaches"
+                }}
+                showAllButton={following.length > 3 ? {
+                  totalCount: following.length,
+                  isExpanded: showAllFollowing,
+                  onToggle: () => setShowAllFollowing(!showAllFollowing),
+                  itemName: "Following"
+                } : undefined}
+              >
+                {visibleFollowing.map((followingUser, index) => (
+                  <UserListItem
+                    key={followingUser.id}
+                    user={followingUser}
+                    index={index}
+                    hoverColor="blue"
+                  />
+                ))}
+              </TabSection>
             </Tab.Panel>
           </AnimatePresence>
         </Tab.Panels>
