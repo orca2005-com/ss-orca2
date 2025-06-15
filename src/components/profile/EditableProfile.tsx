@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Edit2, Check, X, Camera, MapPin, Link as LinkIcon, Share2, Star, Award, Users, Copy, ExternalLink } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Profile } from '../../types';
 import { Avatar } from '../ui/Avatar';
@@ -21,93 +20,6 @@ interface EditableProfileProps {
   isEditing: boolean;
   onEditingChange: (isEditing: boolean) => void;
   canEdit: boolean;
-}
-
-interface ShareDropdownProps {
-  isOpen: boolean;
-  onClose: () => void;
-  buttonRef: React.RefObject<HTMLButtonElement>;
-  onShare: (platform: 'facebook' | 'twitter' | 'linkedin' | 'copy' | 'native') => void;
-  profile: Profile;
-}
-
-function ShareDropdown({ isOpen, onClose, buttonRef, onShare, profile }: ShareDropdownProps) {
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + 8,
-        left: rect.right - 240 // Wider dropdown for profile sharing
-      });
-    }
-  }, [isOpen, buttonRef]);
-
-  if (!isOpen) return null;
-
-  return createPortal(
-    <>
-      <div className="fixed inset-0 z-[9998]" onClick={onClose} />
-      <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: -10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -10 }}
-          className="fixed bg-dark-lighter/95 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden z-[9999] border border-white/10 min-w-60"
-          style={{ top: position.top, left: position.left }}
-        >
-          <div className="p-3">
-            <p className="text-xs text-gray-400 px-3 py-2 font-medium">Share {profile.name}'s profile</p>
-            
-            <button
-              onClick={() => onShare('facebook')}
-              className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
-            >
-              <div className="w-4 h-4 bg-blue-600 rounded"></div>
-              <span>Share on Facebook</span>
-            </button>
-            
-            <button
-              onClick={() => onShare('twitter')}
-              className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-sky-500/20 hover:text-sky-400 transition-colors ultra-touch rounded-lg"
-            >
-              <div className="w-4 h-4 bg-sky-500 rounded"></div>
-              <span>Share on Twitter</span>
-            </button>
-            
-            <button
-              onClick={() => onShare('linkedin')}
-              className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-700/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
-            >
-              <div className="w-4 h-4 bg-blue-700 rounded"></div>
-              <span>Share on LinkedIn</span>
-            </button>
-            
-            <button
-              onClick={() => onShare('copy')}
-              data-platform="copy"
-              className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-gray-600/20 hover:text-gray-300 transition-colors ultra-touch rounded-lg"
-            >
-              <Copy className="w-4 h-4" />
-              <span>Copy Profile Link</span>
-            </button>
-            
-            {navigator.share && (
-              <button
-                onClick={() => onShare('native')}
-                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-accent/20 hover:text-accent transition-colors ultra-touch rounded-lg"
-              >
-                <ExternalLink className="w-4 h-4" />
-                <span>More Share Options</span>
-              </button>
-            )}
-          </div>
-        </motion.div>
-      </AnimatePresence>
-    </>,
-    document.body
-  );
 }
 
 export function EditableProfile({ profile, onSave, isEditing, onEditingChange, canEdit }: EditableProfileProps) {
@@ -172,15 +84,7 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
           break;
         case 'copy':
           await navigator.clipboard.writeText(profileUrl);
-          // Show success feedback
-          const button = shareButtonRef.current?.parentElement?.querySelector('[data-platform="copy"]');
-          if (button) {
-            const originalText = button.textContent;
-            button.textContent = 'Copied!';
-            setTimeout(() => {
-              button.textContent = originalText;
-            }, 2000);
-          }
+          alert('Profile link copied to clipboard!');
           break;
         case 'native':
           if (navigator.share) {
@@ -260,6 +164,20 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
     }
   ];
 
+  // Close share dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (shareButtonRef.current && !shareButtonRef.current.contains(event.target as Node)) {
+        setShowShareOptions(false);
+      }
+    };
+
+    if (showShareOptions) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showShareOptions]);
+
   return (
     <div className="relative">
       {/* Enhanced Cover Image with Gradient Overlay */}
@@ -292,23 +210,15 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
         </div>
 
         {isEditing && isHoveringCover && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm"
-          >
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
             <div className="text-white text-center">
-              <motion.div
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200 }}
-              >
+              <div>
                 <Camera className="w-12 h-12 mx-auto mb-3" />
                 <p className="text-lg font-medium">Change Cover Photo</p>
                 <p className="text-sm text-gray-300">Click or drag to upload</p>
-              </motion.div>
+              </div>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
 
@@ -344,13 +254,9 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                   />
 
                   {isEditing && isHoveringAvatar && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center backdrop-blur-sm"
-                    >
+                    <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center backdrop-blur-sm">
                       <Camera className="w-8 h-8 text-white" />
-                    </motion.div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -521,14 +427,74 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                       >
                         Edit Profile
                       </Button>
-                      <Button
-                        ref={shareButtonRef}
-                        variant="outline"
-                        icon={Share2}
-                        onClick={handleShareClick}
-                      >
-                        Share
-                      </Button>
+                      <div className="relative">
+                        <Button
+                          ref={shareButtonRef}
+                          variant="outline"
+                          icon={Share2}
+                          onClick={handleShareClick}
+                        >
+                          Share
+                        </Button>
+                        
+                        {/* Share Dropdown */}
+                        {showShareOptions && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-40"
+                              onClick={() => setShowShareOptions(false)}
+                            />
+                            
+                            <div className="absolute right-0 top-full mt-2 bg-dark-lighter/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden z-50 border border-white/10 min-w-[200px]">
+                              <div className="p-2">
+                                <p className="text-xs text-gray-400 px-3 py-2 font-medium">Share {profile.name}'s profile</p>
+                                
+                                <button
+                                  onClick={() => handleShare('facebook')}
+                                  className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
+                                >
+                                  <div className="w-4 h-4 bg-blue-600 rounded"></div>
+                                  <span>Facebook</span>
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleShare('twitter')}
+                                  className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-sky-500/20 hover:text-sky-400 transition-colors ultra-touch rounded-lg"
+                                >
+                                  <div className="w-4 h-4 bg-sky-500 rounded"></div>
+                                  <span>Twitter</span>
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleShare('linkedin')}
+                                  className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-700/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
+                                >
+                                  <div className="w-4 h-4 bg-blue-700 rounded"></div>
+                                  <span>LinkedIn</span>
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleShare('copy')}
+                                  className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-gray-600/20 hover:text-gray-300 transition-colors ultra-touch rounded-lg"
+                                >
+                                  <Copy className="w-4 h-4" />
+                                  <span>Copy Link</span>
+                                </button>
+                                
+                                {navigator.share && (
+                                  <button
+                                    onClick={() => handleShare('native')}
+                                    className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-accent/20 hover:text-accent transition-colors ultra-touch rounded-lg"
+                                  >
+                                    <ExternalLink className="w-4 h-4" />
+                                    <span>More Options</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )
                 ) : (
@@ -540,14 +506,74 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                     />
 
                     {/* Share Button */}
-                    <Button
-                      ref={shareButtonRef}
-                      variant="outline"
-                      icon={Share2}
-                      onClick={handleShareClick}
-                    >
-                      Share Profile
-                    </Button>
+                    <div className="relative">
+                      <Button
+                        ref={shareButtonRef}
+                        variant="outline"
+                        icon={Share2}
+                        onClick={handleShareClick}
+                      >
+                        Share Profile
+                      </Button>
+                      
+                      {/* Share Dropdown */}
+                      {showShareOptions && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40"
+                            onClick={() => setShowShareOptions(false)}
+                          />
+                          
+                          <div className="absolute right-0 top-full mt-2 bg-dark-lighter/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden z-50 border border-white/10 min-w-[200px]">
+                            <div className="p-2">
+                              <p className="text-xs text-gray-400 px-3 py-2 font-medium">Share {profile.name}'s profile</p>
+                              
+                              <button
+                                onClick={() => handleShare('facebook')}
+                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
+                              >
+                                <div className="w-4 h-4 bg-blue-600 rounded"></div>
+                                <span>Facebook</span>
+                              </button>
+                              
+                              <button
+                                onClick={() => handleShare('twitter')}
+                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-sky-500/20 hover:text-sky-400 transition-colors ultra-touch rounded-lg"
+                              >
+                                <div className="w-4 h-4 bg-sky-500 rounded"></div>
+                                <span>Twitter</span>
+                              </button>
+                              
+                              <button
+                                onClick={() => handleShare('linkedin')}
+                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-700/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
+                              >
+                                <div className="w-4 h-4 bg-blue-700 rounded"></div>
+                                <span>LinkedIn</span>
+                              </button>
+                              
+                              <button
+                                onClick={() => handleShare('copy')}
+                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-gray-600/20 hover:text-gray-300 transition-colors ultra-touch rounded-lg"
+                              >
+                                <Copy className="w-4 h-4" />
+                                <span>Copy Link</span>
+                              </button>
+                              
+                              {navigator.share && (
+                                <button
+                                  onClick={() => handleShare('native')}
+                                  className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-accent/20 hover:text-accent transition-colors ultra-touch rounded-lg"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                  <span>More Options</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -555,15 +581,6 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
           </Card>
         </motion.div>
       </div>
-
-      {/* Enhanced Share Dropdown */}
-      <ShareDropdown
-        isOpen={showShareOptions}
-        onClose={() => setShowShareOptions(false)}
-        buttonRef={shareButtonRef}
-        onShare={handleShare}
-        profile={profile}
-      />
     </div>
   );
 }

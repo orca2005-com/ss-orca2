@@ -249,32 +249,24 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
               <MoreHorizontal className="w-5 h-5" />
             </button>
 
-            <AnimatePresence>
-              {showPostMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowPostMenu(false)}
-                  />
-                  
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 bg-dark-lighter/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden z-50 border border-white/10 min-w-[160px]"
+            {showPostMenu && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowPostMenu(false)}
+                />
+                
+                <div className="absolute right-0 top-full mt-2 bg-dark-lighter/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden z-50 border border-white/10 min-w-[160px]">
+                  <button
+                    onClick={handleNotInterested}
+                    className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors ultra-touch"
                   >
-                    <button
-                      onClick={handleNotInterested}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors ultra-touch"
-                    >
-                      <EyeOff className="w-4 h-4" />
-                      <span>Not Interested</span>
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+                    <EyeOff className="w-4 h-4" />
+                    <span>Not Interested</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -319,90 +311,72 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
             <span>{sharesCount}</span>
           </button>
 
-          <AnimatePresence>
-            {showShareMenu && (
-              <>
-                <div 
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowShareMenu(false)}
-                />
-                
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-dark-lighter/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden z-50 border border-white/10 min-w-[200px]"
-                >
-                  <div className="p-2">
-                    <p className="text-xs text-gray-400 px-3 py-2 font-medium">Share this post</p>
-                    
+          {showShareMenu && (
+            <>
+              <div 
+                className="fixed inset-0 z-40"
+                onClick={() => setShowShareMenu(false)}
+              />
+              
+              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-dark-lighter/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden z-50 border border-white/10 min-w-[200px]">
+                <div className="p-2">
+                  <p className="text-xs text-gray-400 px-3 py-2 font-medium">Share this post</p>
+                  
+                  <button
+                    onClick={() => handleShare('facebook')}
+                    className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
+                  >
+                    <div className="w-4 h-4 bg-blue-600 rounded"></div>
+                    <span>Facebook</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleShare('twitter')}
+                    className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-sky-500/20 hover:text-sky-400 transition-colors ultra-touch rounded-lg"
+                  >
+                    <div className="w-4 h-4 bg-sky-500 rounded"></div>
+                    <span>Twitter</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleShare('linkedin')}
+                    className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-700/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
+                  >
+                    <div className="w-4 h-4 bg-blue-700 rounded"></div>
+                    <span>LinkedIn</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleShare('copy')}
+                    data-platform="copy"
+                    className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-gray-600/20 hover:text-gray-300 transition-colors ultra-touch rounded-lg"
+                  >
+                    <Copy className="w-4 h-4" />
+                    <span>Copy Link</span>
+                  </button>
+                  
+                  {navigator.share && (
                     <button
-                      onClick={() => handleShare('facebook')}
-                      className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
+                      onClick={() => handleShare('native')}
+                      className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-accent/20 hover:text-accent transition-colors ultra-touch rounded-lg"
                     >
-                      <div className="w-4 h-4 bg-blue-600 rounded"></div>
-                      <span>Facebook</span>
+                      <ExternalLink className="w-4 h-4" />
+                      <span>More Options</span>
                     </button>
-                    
-                    <button
-                      onClick={() => handleShare('twitter')}
-                      className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-sky-500/20 hover:text-sky-400 transition-colors ultra-touch rounded-lg"
-                    >
-                      <div className="w-4 h-4 bg-sky-500 rounded"></div>
-                      <span>Twitter</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleShare('linkedin')}
-                      className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-700/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
-                    >
-                      <div className="w-4 h-4 bg-blue-700 rounded"></div>
-                      <span>LinkedIn</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleShare('copy')}
-                      data-platform="copy"
-                      className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-gray-600/20 hover:text-gray-300 transition-colors ultra-touch rounded-lg"
-                    >
-                      <Copy className="w-4 h-4" />
-                      <span>Copy Link</span>
-                    </button>
-                    
-                    {navigator.share && (
-                      <button
-                        onClick={() => handleShare('native')}
-                        className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-accent/20 hover:text-accent transition-colors ultra-touch rounded-lg"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        <span>More Options</span>
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {showComments && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="space-y-4 border-t border-dark-light pt-4"
-        >
+        <div className="space-y-4 border-t border-dark-light pt-4">
           {comments.length > 0 && (
             <div className="space-y-3 max-h-60 overflow-y-auto">
               {comments.map((comment) => (
-                <motion.div
-                  key={comment.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-start space-x-3 group"
-                >
+                <div key={comment.id} className="flex items-start space-x-3 group">
                   <img
                     src={comment.author.avatar}
                     alt={comment.author.name}
@@ -427,7 +401,7 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
                       {formatDistanceToNow(comment.timestamp, { addSuffix: true })}
                     </span>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           )}
@@ -455,7 +429,7 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
               </button>
             </div>
           </form>
-        </motion.div>
+        </div>
       )}
     </motion.div>
   );
