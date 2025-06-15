@@ -406,26 +406,34 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
             </div>
           )}
 
-          <form onSubmit={handleAddComment} className="flex items-center space-x-2">
-            <img
-              src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"
-              alt="Your avatar"
-              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-            />
-            <div className="flex-1 flex items-center space-x-2">
-              <input
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Write a comment..."
-                className="flex-1 bg-dark text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent ultra-touch text-sm placeholder-gray-400"
+          {/* FIXED: Mobile Comment Input Layout */}
+          <form onSubmit={handleAddComment} className="space-y-3">
+            <div className="flex items-start space-x-2">
+              <img
+                src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"
+                alt="Your avatar"
+                className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1"
               />
+              <div className="flex-1 min-w-0">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Write a comment..."
+                  className="w-full bg-dark text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent ultra-touch text-sm placeholder-gray-400 resize-none"
+                  rows={2}
+                />
+              </div>
+            </div>
+            
+            {/* Send Button - Now Full Width on Mobile */}
+            <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={!newComment.trim()}
-                className="p-2 text-accent hover:text-accent-light disabled:opacity-50 disabled:cursor-not-allowed ultra-touch transition-colors"
+                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark disabled:opacity-50 disabled:cursor-not-allowed ultra-touch transition-colors flex items-center space-x-2"
               >
                 <Send className="h-4 w-4" />
+                <span className="text-sm">Send</span>
               </button>
             </div>
           </form>
