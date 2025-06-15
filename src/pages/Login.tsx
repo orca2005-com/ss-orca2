@@ -79,7 +79,7 @@ export default function Login() {
             alt="SportNet Logo" 
             className="w-10 h-10 object-contain"
           />
-          <h1 className="text-4xl font-bold text-accent">SportNet</h1>
+          <h1 className="text-4xl font-bold text-accent">SportSYNC</h1>
         </div>
         <div className="space-y-6">
           <h2 className="text-5xl font-bold text-white leading-tight">
@@ -90,7 +90,7 @@ export default function Login() {
           </p>
         </div>
         <div className="text-gray-400">
-          © {new Date().getFullYear()} SportNet. All rights reserved.
+          © {new Date().getFullYear()} SportSYNC. All rights reserved.
         </div>
       </div>
 
