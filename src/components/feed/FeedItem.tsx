@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Send, MoreHorizontal, EyeOff } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Send, MoreHorizontal, EyeOff, Copy, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
@@ -52,8 +52,11 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsCount, setCommentsCount] = useState(post.comments);
   const [showPostMenu, setShowPostMenu] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [sharesCount, setSharesCount] = useState(post.shares);
   const [isRemoving, setIsRemoving] = useState(false);
   const postMenuRef = useRef<HTMLDivElement>(null);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
 
   const isOwnPost = post.author.id === currentUserId;
 
@@ -103,18 +106,90 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
     }, 300);
   };
 
+  // Enhanced Share Functionality
+  const handleShare = async (platform?: 'facebook' | 'twitter' | 'linkedin' | 'copy' | 'native') => {
+    const postUrl = `${window.location.origin}/post/${post.id}`;
+    const shareText = `Check out this post by ${post.author.name}: "${post.content.slice(0, 100)}${post.content.length > 100 ? '...' : ''}"`;
+    
+    try {
+      if (!platform) {
+        // Try native share first, fallback to showing share menu
+        if (navigator.share) {
+          await navigator.share({
+            title: `Post by ${post.author.name}`,
+            text: shareText,
+            url: postUrl
+          });
+          setSharesCount(prev => prev + 1);
+          return;
+        } else {
+          setShowShareMenu(true);
+          return;
+        }
+      }
+
+      switch (platform) {
+        case 'facebook':
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`, '_blank', 'width=600,height=400');
+          break;
+        case 'twitter':
+          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(postUrl)}`, '_blank', 'width=600,height=400');
+          break;
+        case 'linkedin':
+          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`, '_blank', 'width=600,height=400');
+          break;
+        case 'copy':
+          await navigator.clipboard.writeText(postUrl);
+          // Show success feedback
+          const button = shareMenuRef.current?.querySelector('[data-platform="copy"]');
+          if (button) {
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+              button.textContent = originalText;
+            }, 2000);
+          }
+          break;
+        case 'native':
+          if (navigator.share) {
+            await navigator.share({
+              title: `Post by ${post.author.name}`,
+              text: shareText,
+              url: postUrl
+            });
+          }
+          break;
+      }
+      
+      setSharesCount(prev => prev + 1);
+      setShowShareMenu(false);
+    } catch (error) {
+      console.error('Share failed:', error);
+      // Fallback to copy link
+      try {
+        await navigator.clipboard.writeText(postUrl);
+        alert('Link copied to clipboard!');
+      } catch (copyError) {
+        console.error('Copy failed:', copyError);
+      }
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (postMenuRef.current && !postMenuRef.current.contains(event.target as Node)) {
         setShowPostMenu(false);
       }
+      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
+        setShowShareMenu(false);
+      }
     };
 
-    if (showPostMenu) {
+    if (showPostMenu || showShareMenu) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [showPostMenu]);
+  }, [showPostMenu, showShareMenu]);
 
   const mediaItems = post.media?.map((media, index) => ({
     id: `${post.id}-${index}`,
@@ -234,10 +309,82 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
           <span>{commentsCount}</span>
         </button>
 
-        <button className="flex items-center space-x-2 text-gray-400 hover:text-gray-300 ultra-touch">
-          <Share2 className="w-5 h-5" />
-          <span>{post.shares}</span>
-        </button>
+        {/* Enhanced Share Button with Menu */}
+        <div className="relative" ref={shareMenuRef}>
+          <button
+            onClick={() => handleShare()}
+            className="flex items-center space-x-2 text-gray-400 hover:text-gray-300 ultra-touch"
+          >
+            <Share2 className="w-5 h-5" />
+            <span>{sharesCount}</span>
+          </button>
+
+          <AnimatePresence>
+            {showShareMenu && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowShareMenu(false)}
+                />
+                
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-dark-lighter/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden z-50 border border-white/10 min-w-[200px]"
+                >
+                  <div className="p-2">
+                    <p className="text-xs text-gray-400 px-3 py-2 font-medium">Share this post</p>
+                    
+                    <button
+                      onClick={() => handleShare('facebook')}
+                      className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
+                    >
+                      <div className="w-4 h-4 bg-blue-600 rounded"></div>
+                      <span>Facebook</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => handleShare('twitter')}
+                      className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-sky-500/20 hover:text-sky-400 transition-colors ultra-touch rounded-lg"
+                    >
+                      <div className="w-4 h-4 bg-sky-500 rounded"></div>
+                      <span>Twitter</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => handleShare('linkedin')}
+                      className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-blue-700/20 hover:text-blue-400 transition-colors ultra-touch rounded-lg"
+                    >
+                      <div className="w-4 h-4 bg-blue-700 rounded"></div>
+                      <span>LinkedIn</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => handleShare('copy')}
+                      data-platform="copy"
+                      className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-gray-600/20 hover:text-gray-300 transition-colors ultra-touch rounded-lg"
+                    >
+                      <Copy className="w-4 h-4" />
+                      <span>Copy Link</span>
+                    </button>
+                    
+                    {navigator.share && (
+                      <button
+                        onClick={() => handleShare('native')}
+                        className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-accent/20 hover:text-accent transition-colors ultra-touch rounded-lg"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>More Options</span>
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {showComments && (
