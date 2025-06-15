@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ConnectionButton } from '../ui/ConnectionButton';
 
 interface UserCardProps {
   user: {
@@ -53,12 +54,19 @@ export function UserCard({ user, index }: UserCardProps) {
             <span className="truncate">{user.location}</span>
           </div>
         </div>
-        <button 
-          onClick={handleViewProfile}
-          className="px-3 py-1.5 md:px-4 md:py-2 bg-accent text-white text-xs md:text-sm rounded-lg hover:bg-accent-dark transition-colors whitespace-nowrap"
-        >
-          View Profile
-        </button>
+        <div className="flex flex-col space-y-2">
+          <ConnectionButton
+            userId={user.id}
+            size="sm"
+            showLabel={true}
+          />
+          <button 
+            onClick={handleViewProfile}
+            className="px-3 py-1.5 md:px-4 md:py-2 bg-dark text-gray-300 text-xs md:text-sm rounded-lg hover:bg-dark-light hover:text-white transition-colors whitespace-nowrap"
+          >
+            View Profile
+          </button>
+        </div>
       </div>
     </motion.div>
   );

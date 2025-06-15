@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, MessageCircle, Bell, User, Menu, X } from 'lucide-react';
+import { Home, Search, MessageCircle, Bell, User, Menu, X, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { useAuth } from '../../context/AuthContext';
+import { useConnections } from '../../context/ConnectionContext';
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -11,6 +12,7 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, unreadMessages, unreadNotifications } = useAuth();
+  const { pendingRequests } = useConnections();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export function Navbar() {
   };
 
   const menuItems = [
+    { label: 'Connection Requests', path: '/connection-requests', icon: Users, count: pendingRequests.length },
     { label: 'About Us', path: '/about' },
     { label: 'Contact Us', path: '/contact' },
     { label: 'Privacy Policy', path: '/privacy' },
@@ -53,7 +56,7 @@ export function Navbar() {
   ];
 
   // Check if we're on a legal page
-  const isLegalPage = ['/about', '/privacy', '/terms', '/contact'].includes(location.pathname);
+  const isLegalPage = ['/about', '/privacy', '/terms', '/contact', '/connection-requests'].includes(location.pathname);
 
   return (
     <motion.nav
@@ -161,6 +164,9 @@ export function Navbar() {
                   >
                     {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                   </motion.div>
+                  {pendingRequests.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full"></span>
+                  )}
                 </div>
               </button>
 
@@ -172,21 +178,29 @@ export function Navbar() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 top-full mt-2 w-48 bg-dark-lighter border border-dark-light rounded-lg shadow-lg overflow-hidden z-50"
+                    className="absolute right-0 top-full mt-2 w-56 bg-dark-lighter border border-dark-light rounded-lg shadow-lg overflow-hidden z-50"
                   >
                     {menuItems.map((item, index) => (
                       <motion.div
-                        key={item.path}
+                        key={item.path || item.label}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
                         <Link
-                          to={item.path}
+                          to={item.path || '#'}
                           onClick={() => setIsMenuOpen(false)}
-                          className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200"
+                          className="flex items-center justify-between px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200"
                         >
-                          <span>{item.label}</span>
+                          <div className="flex items-center space-x-3">
+                            {item.icon && <item.icon className="w-4 h-4" />}
+                            <span>{item.label}</span>
+                          </div>
+                          {item.count > 0 && (
+                            <span className="bg-accent text-white text-xs px-2 py-1 rounded-full">
+                              {item.count}
+                            </span>
+                          )}
                         </Link>
                       </motion.div>
                     ))}
@@ -208,9 +222,12 @@ export function Navbar() {
               >
                 {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </motion.div>
+              {pendingRequests.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full"></span>
+              )}
             </button>
 
-            {/* Mobile Dropdown Menu - Fixed positioning */}
+            {/* Mobile Dropdown Menu */}
             <AnimatePresence>
               {isMenuOpen && (
                 <motion.div
@@ -218,26 +235,29 @@ export function Navbar() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute right-0 top-full mt-2 w-56 bg-dark-lighter border border-dark-light rounded-lg shadow-lg overflow-hidden z-50"
-                  style={{ 
-                    right: '0',
-                    left: 'auto',
-                    transform: 'translateX(0)'
-                  }}
+                  className="absolute right-0 top-full mt-2 w-64 bg-dark-lighter border border-dark-light rounded-lg shadow-lg overflow-hidden z-50"
                 >
                   {menuItems.map((item, index) => (
                     <motion.div
-                      key={item.path}
+                      key={item.path || item.label}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05 }}
                     >
                       <Link
-                        to={item.path}
+                        to={item.path || '#'}
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200"
+                        className="flex items-center justify-between px-4 py-3 text-sm text-gray-300 hover:bg-dark hover:text-white transition-colors duration-200"
                       >
-                        <span>{item.label}</span>
+                        <div className="flex items-center space-x-3">
+                          {item.icon && <item.icon className="w-4 h-4" />}
+                          <span>{item.label}</span>
+                        </div>
+                        {item.count > 0 && (
+                          <span className="bg-accent text-white text-xs px-2 py-1 rounded-full">
+                            {item.count}
+                          </span>
+                        )}
                       </Link>
                     </motion.div>
                   ))}

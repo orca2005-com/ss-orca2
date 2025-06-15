@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Send, MoreHorizontal, EyeOff, UserPlus, UserCheck } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Send, MoreHorizontal, EyeOff } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { MediaGrid } from '../ui/MediaGrid';
+import { ConnectionButton } from '../ui/ConnectionButton';
 import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
 
 interface Comment {
@@ -52,8 +53,6 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
   const [commentsCount, setCommentsCount] = useState(post.comments);
   const [showPostMenu, setShowPostMenu] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [isFollowLoading, setIsFollowLoading] = useState(false);
   const postMenuRef = useRef<HTMLDivElement>(null);
 
   const isOwnPost = post.author.id === currentUserId;
@@ -66,16 +65,6 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
   const handleViewProfile = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/profile/${post.author.id}`);
-  };
-
-  const handleFollow = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsFollowLoading(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    setIsFollowing(!isFollowing);
-    setIsFollowLoading(false);
   };
 
   const handleAddComment = (e: React.FormEvent) => {
@@ -168,31 +157,12 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
 
         <div className="flex items-center space-x-2">
           {!isOwnPost && (
-            <motion.button
-              onClick={handleFollow}
-              disabled={isFollowLoading}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ultra-touch ${
-                isFollowing
-                  ? 'bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30'
-                  : 'bg-accent text-white hover:bg-accent-dark'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {isFollowLoading ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : isFollowing ? (
-                <>
-                  <UserCheck className="w-4 h-4" />
-                  <span className="hidden sm:inline">Following</span>
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Follow</span>
-                </>
-              )}
-            </motion.button>
+            <ConnectionButton
+              userId={post.author.id}
+              size="sm"
+              showLabel={false}
+              className="px-3 py-1.5"
+            />
           )}
 
           <div className="relative" ref={postMenuRef}>
