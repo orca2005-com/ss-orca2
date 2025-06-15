@@ -54,7 +54,7 @@ export function FollowButton({
     
     let newStatus: FollowStatus;
     
-    // Update follow status based on current state - Instagram logic
+    // Update follow status based on current state
     if (followStatus === 'none') {
       newStatus = 'following';
     } else if (followStatus === 'follows_you') {
@@ -68,7 +68,7 @@ export function FollowButton({
     setIsLoading(false);
   };
 
-  // Instagram-like follow button logic
+  // Updated follow button logic - all green accent colors
   const getFollowButtonText = () => {
     if (followStatus === 'follows_you') return 'Follow Back';
     if (followStatus === 'following') return 'Following';
@@ -83,13 +83,14 @@ export function FollowButton({
   };
 
   const getFollowButtonStyle = () => {
+    // All buttons now use consistent green accent colors
     if (followStatus === 'follows_you') {
-      return 'bg-blue-500 text-white hover:bg-blue-600';
+      return 'bg-accent text-white hover:bg-accent-dark'; // Green accent for "Follow Back"
     }
     if (followStatus === 'following') {
-      return 'bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30';
+      return 'bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30'; // Green accent outline for "Following"
     }
-    return 'bg-accent text-white hover:bg-accent-dark';
+    return 'bg-accent text-white hover:bg-accent-dark'; // Green accent for "Follow"
   };
 
   const getSizeClasses = () => {
