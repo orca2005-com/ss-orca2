@@ -3,7 +3,6 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { NetworkStatus } from './components/ui/NetworkStatus';
 import { MainLayout } from './components/layout/MainLayout';
-import { ConnectionProvider } from './context/ConnectionContext';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import CreateProfile from './pages/CreateProfile';
@@ -14,7 +13,6 @@ import Search from './pages/Search';
 import Profile from './pages/Profile';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
-import ConnectionRequests from './pages/ConnectionRequests';
 import About from './pages/About';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
@@ -62,35 +60,32 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ConnectionProvider>
-        <div className="mobile-optimized">
-          <NetworkStatus />
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/create-profile" element={<CreateProfile />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/connection-requests" element={<ConnectionRequests />} />
-            
-            <Route element={<MainLayout />}>
-              <Route path="/home" element={<Home />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/profile/:id" element={<Profile />} />
-            </Route>
+      <div className="mobile-optimized">
+        <NetworkStatus />
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/create-profile" element={<CreateProfile />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/contact" element={<Contact />} />
+          
+          <Route element={<MainLayout />}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/profile/:id" element={<Profile />} />
+          </Route>
 
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </div>
-      </ConnectionProvider>
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </div>
     </ErrorBoundary>
   );
 }
