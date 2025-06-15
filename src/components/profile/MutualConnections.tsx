@@ -30,7 +30,7 @@ export function MutualConnections({ connections, onViewProfile }: MutualConnecti
       <div className="flex items-center space-x-2">
         <Users className="w-5 h-5 text-accent" />
         <h3 className="text-lg font-semibold text-white">
-          {connections.length} Mutual Connection{connections.length !== 1 ? 's' : ''}
+          {connections.length} Mutual Follower{connections.length !== 1 ? 's' : ''}
         </h3>
       </div>
 

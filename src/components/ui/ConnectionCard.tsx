@@ -16,7 +16,7 @@ interface Connection {
 
 interface ConnectionCardProps {
   connection: Connection;
-  onConnect?: (id: string) => void;
+  onFollow?: (id: string) => void;
   onDismiss?: (id: string) => void;
   onViewProfile?: (id: string) => void;
   showMutualConnections?: boolean;
@@ -26,25 +26,25 @@ interface ConnectionCardProps {
 
 export function ConnectionCard({
   connection,
-  onConnect,
+  onFollow,
   onDismiss,
   onViewProfile,
   showMutualConnections = true,
   showDismiss = true,
   index = 0
 }: ConnectionCardProps) {
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowed, setIsFollowed] = useState(false);
 
-  const handleConnect = async (e: React.MouseEvent) => {
+  const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsConnecting(true);
+    setIsFollowing(true);
     
-    // Simulate connection process
+    // Simulate follow process
     setTimeout(() => {
-      setIsConnecting(false);
-      setIsConnected(true);
-      onConnect?.(connection.id);
+      setIsFollowing(false);
+      setIsFollowed(true);
+      onFollow?.(connection.id);
     }, 2000);
   };
 
@@ -109,23 +109,23 @@ export function ConnectionCard({
             )}
 
             <div className="flex items-center justify-between">
-              {isConnected ? (
+              {isFollowed ? (
                 <Badge variant="success" icon={Check}>
-                  Connected
+                  Following
                 </Badge>
-              ) : isConnecting ? (
+              ) : isFollowing ? (
                 <Badge variant="info">
                   <div className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin mr-1" />
-                  Connecting...
+                  Following...
                 </Badge>
               ) : (
                 <Button
                   variant="primary"
                   size="sm"
                   icon={UserPlus}
-                  onClick={handleConnect}
+                  onClick={handleFollow}
                 >
-                  Connect
+                  Follow
                 </Button>
               )}
 

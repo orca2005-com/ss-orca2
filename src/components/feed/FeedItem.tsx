@@ -52,11 +52,26 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
   const [commentsCount, setCommentsCount] = useState(post.comments);
   const [showPostMenu, setShowPostMenu] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [followStatus, setFollowStatus] = useState<'none' | 'following' | 'follows_back'>('none');
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const postMenuRef = useRef<HTMLDivElement>(null);
 
   const isOwnPost = post.author.id === currentUserId;
+
+  // Simulate checking if user follows back
+  useEffect(() => {
+    if (!isOwnPost) {
+      // Simulate API call to check follow status
+      const checkFollowStatus = () => {
+        // Random status for demo - in real app this would come from API
+        const statuses: ('none' | 'following' | 'follows_back')[] = ['none', 'following', 'follows_back'];
+        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+        setFollowStatus(randomStatus);
+      };
+      
+      setTimeout(checkFollowStatus, 100);
+    }
+  }, [isOwnPost, post.author.id]);
 
   const handleLike = () => {
     setLiked(!liked);
@@ -74,7 +89,15 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
     
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    setIsFollowing(!isFollowing);
+    // Update follow status based on current state
+    if (followStatus === 'none') {
+      // Check if the other user follows us back
+      const followsBack = Math.random() > 0.5; // Random for demo
+      setFollowStatus(followsBack ? 'follows_back' : 'following');
+    } else {
+      setFollowStatus('none');
+    }
+    
     setIsFollowLoading(false);
   };
 
@@ -134,6 +157,31 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
     title: `${post.author.name}'s ${media.type}`
   })) || [];
 
+  const getFollowButtonText = () => {
+    if (followStatus === 'follows_back') return 'Follow Back';
+    if (followStatus === 'following') return 'Following';
+    return 'Follow';
+  };
+
+  const getFollowButtonIcon = () => {
+    if (followStatus === 'following' || followStatus === 'follows_back') {
+      return UserCheck;
+    }
+    return UserPlus;
+  };
+
+  const getFollowButtonStyle = () => {
+    if (followStatus === 'follows_back') {
+      return 'bg-blue-500 text-white hover:bg-blue-600';
+    }
+    if (followStatus === 'following') {
+      return 'bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30';
+    }
+    return 'bg-accent text-white hover:bg-accent-dark';
+  };
+
+  const FollowIcon = getFollowButtonIcon();
+
   return (
     <motion.div
       initial={{ opacity: 1, scale: 1 }}
@@ -173,23 +221,14 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
               disabled={isFollowLoading}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ultra-touch ${
-                isFollowing
-                  ? 'bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30'
-                  : 'bg-accent text-white hover:bg-accent-dark'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ultra-touch disabled:opacity-50 disabled:cursor-not-allowed ${getFollowButtonStyle()}`}
             >
               {isFollowLoading ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : isFollowing ? (
-                <>
-                  <UserCheck className="w-4 h-4" />
-                  <span className="hidden sm:inline">Following</span>
-                </>
               ) : (
                 <>
-                  <UserPlus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Follow</span>
+                  <FollowIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{getFollowButtonText()}</span>
                 </>
               )}
             </motion.button>

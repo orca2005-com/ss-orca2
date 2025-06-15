@@ -119,7 +119,7 @@ export function ProfileTabs({
   }
 
   baseTabs.push({ 
-    name: 'Connections', 
+    name: 'Followers', 
     icon: <Users className="w-4 h-4 md:w-5 md:h-5" />,
     color: 'text-green-400',
     count: connections.length
@@ -451,7 +451,7 @@ export function ProfileTabs({
               </Tab.Panel>
             )}
 
-            {/* Connections Tab - Enhanced */}
+            {/* Followers Tab - Enhanced */}
             <Tab.Panel className="rounded-2xl bg-dark-lighter/60 backdrop-blur-xl p-4 md:p-6 border border-white/10">
               <motion.div {...containerAnimation}>
                 <div className="space-y-4 md:space-y-6">
@@ -461,8 +461,8 @@ export function ProfileTabs({
                       <Users className="w-5 h-5 text-green-400" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white">Network</h3>
-                      <p className="text-sm text-gray-400">{connections.length} connections</p>
+                      <h3 className="text-lg font-semibold text-white">Followers</h3>
+                      <p className="text-sm text-gray-400">{connections.length} followers</p>
                     </div>
                   </div>
 
@@ -500,7 +500,7 @@ export function ProfileTabs({
                       <div className="w-16 h-16 bg-green-400/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <Users className="w-8 h-8 text-green-400" />
                       </div>
-                      <p className="text-gray-400 text-lg font-medium">No connections yet</p>
+                      <p className="text-gray-400 text-lg font-medium">No followers yet</p>
                       <p className="text-gray-500 text-sm">Start connecting with other athletes and coaches</p>
                     </div>
                   )}
@@ -510,7 +510,7 @@ export function ProfileTabs({
                       onClick={() => setShowAllConnections(!showAllConnections)}
                       className="flex items-center justify-center space-x-2 w-full py-3 text-green-400 hover:text-green-300 transition-colors font-medium bg-green-400/10 hover:bg-green-400/20 rounded-xl"
                     >
-                      <span>{showAllConnections ? 'Show Less' : `Show All ${connections.length} Connections`}</span>
+                      <span>{showAllConnections ? 'Show Less' : `Show All ${connections.length} Followers`}</span>
                       <ChevronRight className={`w-4 h-4 transform transition-transform ${showAllConnections ? 'rotate-90' : ''}`} />
                     </motion.button>
                   )}
