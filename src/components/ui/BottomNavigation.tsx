@@ -19,7 +19,7 @@ export function BottomNavigation() {
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-dark/95 backdrop-blur-sm border-t border-dark-light z-50 safe-area-inset-bottom">
-      <div className="flex justify-around items-center py-2">
+      <div className="flex justify-around items-center py-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -29,23 +29,23 @@ export function BottomNavigation() {
               key={item.path}
               to={item.path}
               className={clsx(
-                'flex flex-col items-center py-2 px-3 relative ultra-touch transition-all duration-100 min-h-touch min-w-touch',
+                'flex flex-col items-center py-2 px-3 relative ultra-touch transition-all duration-100',
                 isActive ? 'text-accent' : 'text-gray-400'
               )}
             >
               <div className="relative">
-                <Icon className="w-6 h-6" />
+                <Icon className="w-5 h-5" />
                 {item.count > 0 && (
                   <motion.span 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-accent rounded-full text-[10px] font-medium text-white"
+                    className="absolute -top-1 -right-1 w-3 h-3 flex items-center justify-center bg-accent rounded-full text-[8px] font-medium text-white"
                   >
-                    {item.count > 9 ? '9+' : item.count}
+                    {item.count}
                   </motion.span>
                 )}
               </div>
-              <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+              <span className="text-[10px] mt-0.5 font-medium">{item.label}</span>
               {isActive && (
                 <motion.div
                   layoutId="bottomNav"
