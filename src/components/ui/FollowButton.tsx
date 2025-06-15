@@ -54,13 +54,13 @@ export function FollowButton({
     
     let newStatus: FollowStatus;
     
-    // Update follow status based on current state - Instagram logic
-    if (followStatus === 'none') {
-      newStatus = 'following';
-    } else if (followStatus === 'follows_you') {
-      newStatus = 'following';
-    } else {
+    // Simple toggle logic - much clearer!
+    if (followStatus === 'following') {
+      // If following, unfollow
       newStatus = 'none';
+    } else {
+      // If not following, follow
+      newStatus = 'following';
     }
     
     setFollowStatus(newStatus);
@@ -68,10 +68,11 @@ export function FollowButton({
     setIsLoading(false);
   };
 
-  // Instagram-like follow button logic
+  // SIMPLIFIED LOGIC: Only 2 states that matter to users
   const getFollowButtonText = () => {
-    if (followStatus === 'follows_you') return 'Follow Back';
-    if (followStatus === 'following') return 'Following';
+    if (followStatus === 'following') {
+      return 'Following';
+    }
     return 'Follow';
   };
 
@@ -82,17 +83,13 @@ export function FollowButton({
     return UserPlus;
   };
 
-  // THIS IS THE KEY LOGIC FOR COLORS:
+  // MUCH SIMPLER COLOR LOGIC:
   const getFollowButtonStyle = () => {
-    if (followStatus === 'follows_you') {
-      // BLUE: When they follow you but you don't follow them back
-      return 'bg-blue-500 text-white hover:bg-blue-600';
-    }
     if (followStatus === 'following') {
-      // LIGHT BLUE/ACCENT: When you're already following them
-      return 'bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30';
+      // GRAY: When you're following them (subtle, less prominent)
+      return 'bg-gray-600 text-white border border-gray-500 hover:bg-gray-700';
     }
-    // GREEN: Default follow button
+    // GREEN: When you can follow them (call to action)
     return 'bg-accent text-white hover:bg-accent-dark';
   };
 
