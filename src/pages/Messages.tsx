@@ -3,7 +3,6 @@ import { Search, Plus, Users, ArrowLeft } from 'lucide-react';
 import { MessageList } from '../components/messages/MessageList';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { Avatar } from '../components/ui/Avatar';
-import { StatusIndicator } from '../components/ui/StatusIndicator';
 import { Input } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -173,11 +172,9 @@ export default function Messages() {
                 {selectedChat.isTyping ? (
                   <span className="text-xs text-accent">Typing...</span>
                 ) : (
-                  <StatusIndicator 
-                    status={selectedChat.isOnline ? 'online' : 'offline'} 
-                    size="sm" 
-                    showText 
-                  />
+                  <span className="text-xs text-gray-400">
+                    {selectedChat.isOnline ? 'Online' : 'Offline'}
+                  </span>
                 )}
               </div>
             </div>
@@ -286,10 +283,9 @@ export default function Messages() {
                     {selectedChat.isTyping ? (
                       <span className="text-sm text-accent">Typing...</span>
                     ) : (
-                      <StatusIndicator 
-                        status={selectedChat.isOnline ? 'online' : 'offline'} 
-                        showText 
-                      />
+                      <span className="text-sm text-gray-400">
+                        {selectedChat.isOnline ? 'Online' : 'Offline'}
+                      </span>
                     )}
                   </div>
                 </div>
