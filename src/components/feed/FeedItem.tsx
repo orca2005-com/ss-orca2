@@ -55,6 +55,7 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [sharesCount, setSharesCount] = useState(post.shares);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
   const postMenuRef = useRef<HTMLDivElement>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
@@ -106,28 +107,37 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
     }, 300);
   };
 
-  // Enhanced Share Functionality
+  // Enhanced Share Functionality with Better Error Handling
   const handleShare = async (platform?: 'facebook' | 'twitter' | 'linkedin' | 'copy' | 'native') => {
     const postUrl = `${window.location.origin}/post/${post.id}`;
     const shareText = `Check out this post by ${post.author.name}: "${post.content.slice(0, 100)}${post.content.length > 100 ? '...' : ''}"`;
     
     try {
       if (!platform) {
-        // Try native share first, fallback to showing share menu
-        if (navigator.share) {
-          await navigator.share({
-            title: `Post by ${post.author.name}`,
-            text: shareText,
-            url: postUrl
-          });
-          setSharesCount(prev => prev + 1);
-          return;
+        // Check if Web Share API is available and supported
+        if (navigator.share && window.isSecureContext) {
+          try {
+            await navigator.share({
+              title: `Post by ${post.author.name}`,
+              text: shareText,
+              url: postUrl
+            });
+            setSharesCount(prev => prev + 1);
+            return;
+          } catch (shareError: any) {
+            // If native share fails, show the share menu instead
+            console.log('Native share not available, showing share menu');
+            setShowShareMenu(true);
+            return;
+          }
         } else {
+          // Native share not available, show share menu
           setShowShareMenu(true);
           return;
         }
       }
 
+      // Handle specific platform sharing
       switch (platform) {
         case 'facebook':
           window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`, '_blank', 'width=600,height=400');
@@ -139,24 +149,34 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
           window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`, '_blank', 'width=600,height=400');
           break;
         case 'copy':
-          await navigator.clipboard.writeText(postUrl);
-          // Show success feedback
-          const button = shareMenuRef.current?.querySelector('[data-platform="copy"]');
-          if (button) {
-            const originalText = button.textContent;
-            button.textContent = 'Copied!';
-            setTimeout(() => {
-              button.textContent = originalText;
-            }, 2000);
+          try {
+            await navigator.clipboard.writeText(postUrl);
+            setShareSuccess(true);
+            setTimeout(() => setShareSuccess(false), 2000);
+          } catch (copyError) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = postUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setShareSuccess(true);
+            setTimeout(() => setShareSuccess(false), 2000);
           }
           break;
         case 'native':
-          if (navigator.share) {
+          if (navigator.share && window.isSecureContext) {
             await navigator.share({
               title: `Post by ${post.author.name}`,
               text: shareText,
               url: postUrl
             });
+          } else {
+            // Fallback to copy
+            await navigator.clipboard.writeText(postUrl);
+            setShareSuccess(true);
+            setTimeout(() => setShareSuccess(false), 2000);
           }
           break;
       }
@@ -165,12 +185,16 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
       setShowShareMenu(false);
     } catch (error) {
       console.error('Share failed:', error);
-      // Fallback to copy link
+      // Always fallback to copy link
       try {
         await navigator.clipboard.writeText(postUrl);
-        alert('Link copied to clipboard!');
+        setShareSuccess(true);
+        setTimeout(() => setShareSuccess(false), 2000);
+        setShowShareMenu(false);
       } catch (copyError) {
-        console.error('Copy failed:', copyError);
+        console.error('Copy also failed:', copyError);
+        // Last resort: show an alert with the URL
+        alert(`Share this post: ${postUrl}`);
       }
     }
   };
@@ -363,14 +387,13 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
                     
                     <button
                       onClick={() => handleShare('copy')}
-                      data-platform="copy"
                       className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-gray-600/20 hover:text-gray-300 transition-colors ultra-touch rounded-lg"
                     >
                       <Copy className="w-4 h-4" />
-                      <span>Copy Link</span>
+                      <span>{shareSuccess ? 'Copied!' : 'Copy Link'}</span>
                     </button>
                     
-                    {navigator.share && (
+                    {navigator.share && window.isSecureContext && (
                       <button
                         onClick={() => handleShare('native')}
                         className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-300 hover:bg-accent/20 hover:text-accent transition-colors ultra-touch rounded-lg"
