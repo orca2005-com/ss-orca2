@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Tab } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Image, Trophy, Users, Plus, X, Award, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { MediaGrid } from '../ui/MediaGrid';
 import { TabSection } from '../ui/TabSection';
-import { UserListItem } from '../ui/UserListItem';
 
 interface ProfileTabsProps {
   isPrivate?: boolean;
@@ -18,6 +18,7 @@ interface ProfileTabsProps {
   onUpdatePosts?: (posts: any[]) => void;
   onUpdateCertifications?: (certifications: string[]) => void;
   userRole?: 'player' | 'team' | 'coach';
+  profileId?: string;
 }
 
 export function ProfileTabs({
@@ -31,14 +32,14 @@ export function ProfileTabs({
   onUpdateAchievements,
   onUpdatePosts,
   onUpdateCertifications,
-  userRole = 'player'
+  userRole = 'player',
+  profileId
 }: ProfileTabsProps) {
+  const navigate = useNavigate();
   const [newAchievement, setNewAchievement] = useState('');
   const [newCertification, setNewCertification] = useState('');
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [showAllAchievements, setShowAllAchievements] = useState(false);
-  const [showAllFollowers, setShowAllFollowers] = useState(false);
-  const [showAllFollowing, setShowAllFollowing] = useState(false);
   const [showAllCertifications, setShowAllCertifications] = useState(false);
 
   const handleAddAchievement = () => {
@@ -73,10 +74,20 @@ export function ProfileTabs({
     }
   };
 
+  const handleFollowersClick = () => {
+    if (profileId) {
+      navigate(`/profile/${profileId}/followers`);
+    }
+  };
+
+  const handleFollowingClick = () => {
+    if (profileId) {
+      navigate(`/profile/${profileId}/following`);
+    }
+  };
+
   const visiblePosts = showAllPosts ? posts : posts.slice(0, 2);
   const visibleAchievements = showAllAchievements ? achievements : achievements.slice(0, 3);
-  const visibleFollowers = showAllFollowers ? followers : followers.slice(0, 3);
-  const visibleFollowing = showAllFollowing ? following : following.slice(0, 3);
   const visibleCertifications = showAllCertifications ? certifications : certifications.slice(0, 3);
 
   // Convert posts to media format for MediaGrid
@@ -117,7 +128,7 @@ export function ProfileTabs({
     });
   }
 
-  // Add followers and following tabs
+  // Add followers and following tabs - these will navigate to separate pages
   baseTabs.push(
     { 
       name: 'Followers', 
@@ -150,6 +161,14 @@ export function ProfileTabs({
                   : 'text-gray-400 hover:bg-white/10 hover:text-white'
                 }`
               }
+              onClick={() => {
+                // Handle navigation for followers/following tabs
+                if (tab.name === 'Followers') {
+                  handleFollowersClick();
+                } else if (tab.name === 'Following') {
+                  handleFollowingClick();
+                }
+              }}
             >
               {({ selected }) => (
                 <div className="flex items-center justify-center space-x-2 md:space-x-3 relative z-10">
@@ -179,7 +198,7 @@ export function ProfileTabs({
           ))}
         </Tab.List>
 
-        {/* Enhanced Tab Panels */}
+        {/* Enhanced Tab Panels - Only show content tabs, not followers/following */}
         <Tab.Panels className="mt-6">
           <AnimatePresence mode="wait">
             {/* Posts Tab */}
@@ -387,66 +406,6 @@ export function ProfileTabs({
                 </TabSection>
               </Tab.Panel>
             )}
-
-            {/* Followers Tab */}
-            <Tab.Panel className="rounded-2xl bg-dark-lighter/60 backdrop-blur-xl p-4 md:p-6 border border-white/10">
-              <TabSection
-                icon={Users}
-                title="Followers"
-                subtitle={`${followers.length} followers`}
-                iconColor="green"
-                emptyState={{
-                  icon: Users,
-                  title: "No followers yet",
-                  subtitle: "Start connecting with other athletes and coaches"
-                }}
-                showAllButton={followers.length > 3 ? {
-                  totalCount: followers.length,
-                  isExpanded: showAllFollowers,
-                  onToggle: () => setShowAllFollowers(!showAllFollowers),
-                  itemName: "Followers"
-                } : undefined}
-              >
-                {visibleFollowers.map((follower, index) => (
-                  <UserListItem
-                    key={follower.id}
-                    user={follower}
-                    index={index}
-                    hoverColor="green"
-                  />
-                ))}
-              </TabSection>
-            </Tab.Panel>
-
-            {/* Following Tab */}
-            <Tab.Panel className="rounded-2xl bg-dark-lighter/60 backdrop-blur-xl p-4 md:p-6 border border-white/10">
-              <TabSection
-                icon={UserPlus}
-                title="Following"
-                subtitle={`${following.length} following`}
-                iconColor="blue"
-                emptyState={{
-                  icon: UserPlus,
-                  title: "Not following anyone yet",
-                  subtitle: "Start following other athletes and coaches"
-                }}
-                showAllButton={following.length > 3 ? {
-                  totalCount: following.length,
-                  isExpanded: showAllFollowing,
-                  onToggle: () => setShowAllFollowing(!showAllFollowing),
-                  itemName: "Following"
-                } : undefined}
-              >
-                {visibleFollowing.map((followingUser, index) => (
-                  <UserListItem
-                    key={followingUser.id}
-                    user={followingUser}
-                    index={index}
-                    hoverColor="blue"
-                  />
-                ))}
-              </TabSection>
-            </Tab.Panel>
           </AnimatePresence>
         </Tab.Panels>
       </Tab.Group>

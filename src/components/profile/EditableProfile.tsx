@@ -3,6 +3,7 @@ import { Edit2, Check, X, Camera, MapPin, Link as LinkIcon, Share2, Star, Award,
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { Profile } from '../../types';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -80,6 +81,7 @@ function ShareDropdown({ isOpen, onClose, buttonRef, onShare }: ShareDropdownPro
 }
 
 export function EditableProfile({ profile, onSave, isEditing, onEditingChange, canEdit }: EditableProfileProps) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(profile);
   const [newAvatar, setNewAvatar] = useState<File | null>(null);
   const [newCoverImage, setNewCoverImage] = useState<File | null>(null);
@@ -166,10 +168,18 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
     }
   };
 
-  // Prepare stats for StatsDisplay component
+  // Prepare stats for StatsDisplay component with click handlers
   const stats = [
-    { label: 'Followers', value: formData.stats.followers },
-    { label: 'Following', value: formData.stats.following }
+    { 
+      label: 'Followers', 
+      value: formData.stats.followers,
+      onClick: () => navigate(`/profile/${profile.id}/followers`)
+    },
+    { 
+      label: 'Following', 
+      value: formData.stats.following,
+      onClick: () => navigate(`/profile/${profile.id}/following`)
+    }
   ];
 
   return (
@@ -395,7 +405,7 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                     </motion.div>
                   )}
 
-                  {/* Enhanced Stats - Using StatsDisplay component */}
+                  {/* Enhanced Stats - Using StatsDisplay component with click handlers */}
                   <StatsDisplay 
                     stats={stats}
                     layout="horizontal"

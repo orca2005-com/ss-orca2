@@ -125,6 +125,7 @@ export default function Profile() {
               followers={profile.followers || []}
               following={profile.following || []}
               userRole={profile.role}
+              profileId={profile.id}
               isEditing={isEditing && isOwnProfile}
               onUpdateAchievements={isOwnProfile ? handleUpdateAchievements : undefined}
               onUpdateCertifications={isOwnProfile ? handleUpdateCertifications : undefined}

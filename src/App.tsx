@@ -11,6 +11,8 @@ import ResetPassword from './pages/ResetPassword';
 import Home from './pages/Home';
 import Search from './pages/Search';
 import Profile from './pages/Profile';
+import FollowersList from './pages/FollowersList';
+import FollowingList from './pages/FollowingList';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import About from './pages/About';
@@ -81,6 +83,8 @@ function App() {
             <Route path="/messages" element={<Messages />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile/:id" element={<Profile />} />
+            <Route path="/profile/:id/followers" element={<FollowersList />} />
+            <Route path="/profile/:id/following" element={<FollowingList />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />
