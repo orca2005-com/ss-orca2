@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { NetworkStatus } from './components/ui/NetworkStatus';
+import { NotificationCenter } from './components/ui/NotificationCenter';
+import { NotificationProvider, useNotifications } from './context/NotificationContext';
 import { MainLayout } from './components/layout/MainLayout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -20,9 +22,10 @@ import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Contact from './pages/Contact';
 
-function App() {
+function AppContent() {
   const location = useLocation();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const { showNotificationCenter, setShowNotificationCenter } = useNotifications();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -61,7 +64,7 @@ function App() {
   }
 
   return (
-    <ErrorBoundary>
+    <>
       <div className="mobile-optimized">
         <NetworkStatus />
         <Routes location={location} key={location.pathname}>
@@ -90,6 +93,22 @@ function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
+
+      {/* Notification Center */}
+      <NotificationCenter
+        isOpen={showNotificationCenter}
+        onClose={() => setShowNotificationCenter(false)}
+      />
+    </>
+  );
+}
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <NotificationProvider>
+        <AppContent />
+      </NotificationProvider>
     </ErrorBoundary>
   );
 }

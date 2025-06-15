@@ -1,19 +1,21 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, MessageCircle, Bell, User } from 'lucide-react';
+import { Home, Search, MessageCircle, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
+import { NotificationBell } from '../layout/NotificationBell';
 
 export function BottomNavigation() {
   const location = useLocation();
-  const { user, unreadMessages, unreadNotifications } = useAuth();
+  const { user, unreadMessages } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const navItems = [
     { path: '/home', icon: Home, label: 'Home' },
     { path: '/search', icon: Search, label: 'Search' },
     { path: '/messages', icon: MessageCircle, label: 'Messages', count: unreadMessages },
-    { path: '/notifications', icon: Bell, label: 'Notifications', count: unreadNotifications },
     { path: user ? `/profile/${user.id}` : '/profile/1', icon: User, label: 'Profile' },
   ];
 
@@ -56,6 +58,12 @@ export function BottomNavigation() {
             </Link>
           );
         })}
+        
+        {/* Notification Bell for Mobile */}
+        <div className="flex flex-col items-center py-2 px-3 relative">
+          <NotificationBell />
+          <span className="text-[10px] mt-0.5 font-medium text-gray-400">Alerts</span>
+        </div>
       </div>
     </nav>
   );
