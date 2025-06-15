@@ -20,7 +20,7 @@
     X-RateLimit-Window = "3600"
     # Security headers
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), web-share=(self)"
 
 # Cache static assets aggressively to reduce server load
 [[headers]]
