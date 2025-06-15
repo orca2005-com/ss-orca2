@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, MessageCircle, User, Menu, X } from 'lucide-react';
+import { Home, Search, MessageCircle, Bell, User, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { useAuth } from '../../context/AuthContext';
-import { NotificationBell } from './NotificationBell';
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, unreadMessages } = useAuth();
+  const { user, unreadMessages, unreadNotifications } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -96,6 +95,7 @@ export function Navbar() {
               { path: '/home', icon: Home, label: 'Home' },
               { path: '/search', icon: Search, label: 'Search' },
               { path: '/messages', icon: MessageCircle, label: 'Messages', count: unreadMessages },
+              { path: '/notifications', icon: Bell, label: 'Notifications', count: unreadNotifications },
             ].map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -126,9 +126,6 @@ export function Navbar() {
                 </Link>
               );
             })}
-
-            {/* Notification Bell */}
-            {!isLegalPage && <NotificationBell />}
 
             {/* Profile Button */}
             {!isLegalPage && user && (
