@@ -62,15 +62,12 @@ export function UserListItem({
       onClick={handleClick}
       className={`flex items-center space-x-4 bg-dark/50 rounded-xl p-4 border border-white/5 ${getHoverColorClasses()} transition-all cursor-pointer group ${className}`}
     >
-      <div className="relative">
-        <Avatar
-          src={user.avatar}
-          alt={user.name}
-          size="md"
-          className={`border-2 border-white/10 ${hoverColor === 'green' ? 'group-hover:border-green-400/50' : hoverColor === 'blue' ? 'group-hover:border-blue-400/50' : 'group-hover:border-accent/50'} transition-colors`}
-        />
-        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-dark-lighter ${hoverColor === 'green' ? 'bg-green-400' : hoverColor === 'blue' ? 'bg-blue-400' : 'bg-accent'}`} />
-      </div>
+      <Avatar
+        src={user.avatar}
+        alt={user.name}
+        size="md"
+        className={`border-2 border-white/10 ${hoverColor === 'green' ? 'group-hover:border-green-400/50' : hoverColor === 'blue' ? 'group-hover:border-blue-400/50' : 'group-hover:border-accent/50'} transition-colors`}
+      />
       
       <div className="flex-1 min-w-0">
         <p className={`font-semibold text-white transition-colors truncate ${getHoverColorClasses().split(' ')[1]}`}>

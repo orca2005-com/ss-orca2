@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useNotifications } from '../../context/NotificationContext';
 
 export function NotificationBell() {
-  const { unreadCount, setShowNotificationCenter, isConnected } = useNotifications();
+  const { unreadCount, setShowNotificationCenter } = useNotifications();
 
   return (
     <button
@@ -23,11 +23,6 @@ export function NotificationBell() {
           {unreadCount > 99 ? '99+' : unreadCount}
         </motion.span>
       )}
-
-      {/* Connection status indicator */}
-      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-dark-lighter ${
-        isConnected ? 'bg-green-500' : 'bg-red-500'
-      }`} />
     </button>
   );
 }
