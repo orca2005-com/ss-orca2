@@ -7,7 +7,7 @@ import clsx from 'clsx';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { MediaGrid } from '../ui/MediaGrid';
 import { FollowButton } from '../ui/FollowButton';
-import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
+import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils';
 
 interface Comment {
   id: string;

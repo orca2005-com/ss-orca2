@@ -47,7 +47,7 @@ export function SuggestedConnections({ connections }: SuggestedConnectionsProps)
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <div className="flex items-center space-x-2">
           <Users className="w-5 h-5 text-accent" />
-          <h2 className="text-lg md:text-xl font-semibold text-white">Suggested Connections</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-white">Suggested People</h2>
         </div>
         <span className="text-xs text-gray-400 bg-dark px-2 py-1 rounded-full">
           {filteredConnections.length} suggestions

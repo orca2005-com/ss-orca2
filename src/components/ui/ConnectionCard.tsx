@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { UserPlus, Check, X, Users } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Avatar } from './Avatar';
 import { Button } from './Button';
 import { Badge } from './Badge';
 import { Card } from './Card';
+import { FollowButton } from './FollowButton';
 
 interface Connection {
   id: string;
@@ -16,7 +17,7 @@ interface Connection {
 
 interface ConnectionCardProps {
   connection: Connection;
-  onFollow?: (id: string) => void;
+  onConnect?: (id: string) => void;
   onDismiss?: (id: string) => void;
   onViewProfile?: (id: string) => void;
   showMutualConnections?: boolean;
@@ -26,27 +27,14 @@ interface ConnectionCardProps {
 
 export function ConnectionCard({
   connection,
-  onFollow,
+  onConnect,
   onDismiss,
   onViewProfile,
   showMutualConnections = true,
   showDismiss = true,
   index = 0
 }: ConnectionCardProps) {
-  const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
-
-  const handleFollow = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsFollowing(true);
-    
-    // Simulate follow process
-    setTimeout(() => {
-      setIsFollowing(false);
-      setIsFollowed(true);
-      onFollow?.(connection.id);
-    }, 2000);
-  };
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -55,6 +43,11 @@ export function ConnectionCard({
 
   const handleViewProfile = () => {
     onViewProfile?.(connection.id);
+  };
+
+  const handleFollowChange = (userId: string, newStatus: any) => {
+    setIsFollowed(newStatus !== 'none');
+    onConnect?.(userId);
   };
 
   return (
@@ -102,7 +95,7 @@ export function ConnectionCard({
 
             {showMutualConnections && connection.mutualConnections !== undefined && (
               <div className="mb-3">
-                <Badge variant="default" icon={Users} size="sm">
+                <Badge variant="default" size="sm">
                   {connection.mutualConnections} mutual
                 </Badge>
               </div>
@@ -113,20 +106,12 @@ export function ConnectionCard({
                 <Badge variant="success" icon={Check}>
                   Following
                 </Badge>
-              ) : isFollowing ? (
-                <Badge variant="info">
-                  <div className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin mr-1" />
-                  Following...
-                </Badge>
               ) : (
-                <Button
-                  variant="primary"
+                <FollowButton
+                  userId={connection.id}
                   size="sm"
-                  icon={UserPlus}
-                  onClick={handleFollow}
-                >
-                  Follow
-                </Button>
+                  onFollowChange={handleFollowChange}
+                />
               )}
 
               <Button

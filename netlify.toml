@@ -7,7 +7,7 @@
   to = "/index.html"
   status = 200
 
-# Enhanced security headers for DDoS protection
+# Security headers
 [[headers]]
   for = "/*"
   [headers.values]
@@ -15,14 +15,10 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    # Rate limiting headers
-    X-RateLimit-Limit = "1000"
-    X-RateLimit-Window = "3600"
-    # Security headers
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
-# Cache static assets aggressively to reduce server load
+# Cache static assets
 [[headers]]
   for = "/static/*"
   [headers.values]
@@ -37,31 +33,3 @@
   for = "*.css"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
-
-# Rate limiting for API endpoints (if you add them)
-[[headers]]
-  for = "/api/*"
-  [headers.values]
-    X-RateLimit-Limit = "100"
-    X-RateLimit-Window = "60"
-
-# Block common attack patterns
-[[redirects]]
-  from = "/wp-admin/*"
-  to = "/404"
-  status = 404
-
-[[redirects]]
-  from = "/admin/*"
-  to = "/404"
-  status = 404
-
-[[redirects]]
-  from = "/.env"
-  to = "/404"
-  status = 404
-
-[[redirects]]
-  from = "/config/*"
-  to = "/404"
-  status = 404

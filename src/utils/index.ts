@@ -37,7 +37,7 @@ export const formatRelativeTime = (date: Date | string): string => {
   }
 };
 
-// Enhanced string utilities with XSS protection
+// String utilities with XSS protection
 export const sanitizeText = (text: string): string => {
   if (typeof text !== 'string') return '';
   
@@ -58,36 +58,30 @@ export const truncateText = (text: string, maxLength: number): string => {
 };
 
 export const generateId = (): string => {
-  // Use crypto.randomUUID if available, fallback to secure random
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   
-  // Fallback with more entropy
   const array = new Uint8Array(16);
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
     crypto.getRandomValues(array);
     return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
   }
   
-  // Last resort fallback
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 };
 
-// Enhanced validation with stricter security
+// Validation utilities
 export const validateEmail = (email: string): boolean => {
   if (typeof email !== 'string') return false;
   
-  // More comprehensive email validation
   const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   
   if (!emailRegex.test(email)) return false;
-  
-  // Additional security checks
-  if (email.length > 254) return false; // RFC 5321 limit
-  if (email.includes('..')) return false; // No consecutive dots
+  if (email.length > 254) return false;
+  if (email.includes('..')) return false;
   if (email.startsWith('.') || email.endsWith('.')) return false;
-  if (email.includes('<') || email.includes('>')) return false; // Prevent injection
+  if (email.includes('<') || email.includes('>')) return false;
   
   return true;
 };
@@ -123,11 +117,10 @@ export const validatePassword = (password: string): { isValid: boolean; errors: 
     errors.push('Password must contain at least one special character');
   }
   
-  // Check for common weak patterns
   const commonPatterns = [
-    /(.)\1{2,}/, // Repeated characters
-    /123456|654321|qwerty|password|admin/i, // Common sequences
-    /<script|javascript:|data:|vbscript:/i, // Injection attempts
+    /(.)\1{2,}/,
+    /123456|654321|qwerty|password|admin/i,
+    /<script|javascript:|data:|vbscript:/i,
   ];
   
   for (const pattern of commonPatterns) {
@@ -145,10 +138,8 @@ export const validateUrl = (url: string): boolean => {
   
   try {
     const urlObj = new URL(url);
-    // Only allow HTTP and HTTPS protocols
     if (!['http:', 'https:'].includes(urlObj.protocol)) return false;
     
-    // Block localhost and private IPs in production
     if (process.env.NODE_ENV === 'production') {
       const hostname = urlObj.hostname.toLowerCase();
       if (
@@ -169,7 +160,7 @@ export const validateUrl = (url: string): boolean => {
   }
 };
 
-// Enhanced file utilities with security checks
+// File utilities
 export const formatFileSize = (bytes: number): string => {
   if (typeof bytes !== 'number' || bytes < 0 || !isFinite(bytes)) {
     return '0 Bytes';
@@ -186,11 +177,9 @@ export const formatFileSize = (bytes: number): string => {
 export const validateFileType = (file: File, allowedTypes: string[]): boolean => {
   if (!file || !file.type) return false;
   
-  // Check MIME type
   const isAllowedType = allowedTypes.some(type => file.type.startsWith(type));
   if (!isAllowedType) return false;
   
-  // Additional security: check file extension
   const fileName = file.name.toLowerCase();
   const dangerousExtensions = ['.exe', '.bat', '.cmd', '.scr', '.pif', '.com', '.jar', '.js', '.vbs', '.php', '.asp', '.jsp'];
   const hasDangerousExtension = dangerousExtensions.some(ext => fileName.endsWith(ext));
@@ -203,7 +192,29 @@ export const validateFileSize = (file: File, maxSizeInBytes: number): boolean =>
   return file.size <= maxSizeInBytes && file.size > 0;
 };
 
-// Enhanced secure Local Storage with better error handling
+// Image optimization utilities
+export const getOptimizedPexelsUrl = (originalUrl: string, quality: 'low' | 'medium' | 'high' = 'medium'): string => {
+  if (!originalUrl.includes('pexels.com')) {
+    return originalUrl;
+  }
+
+  const qualityMap = {
+    low: '?auto=compress&cs=tinysrgb&w=400&q=60',
+    medium: '?auto=compress&cs=tinysrgb&w=800&q=75',
+    high: '?auto=compress&cs=tinysrgb&w=1200&q=85'
+  };
+  
+  return originalUrl.split('?')[0] + qualityMap[quality];
+};
+
+export const createPlaceholderUrl = (originalUrl: string): string => {
+  if (!originalUrl.includes('pexels.com')) {
+    return originalUrl;
+  }
+  return originalUrl.split('?')[0] + '?auto=compress&cs=tinysrgb&w=50&q=20';
+};
+
+// Local Storage utilities
 export const storage = {
   get: <T>(key: string, defaultValue?: T): T | null => {
     if (typeof key !== 'string' || !key.trim()) {
@@ -211,7 +222,6 @@ export const storage = {
       return defaultValue || null;
     }
     
-    // Sanitize key to prevent injection
     const sanitizedKey = sanitizeText(key);
     if (sanitizedKey !== key) {
       console.error('Storage key contains invalid characters');
@@ -229,9 +239,7 @@ export const storage = {
       
       const parsed = JSON.parse(item);
       
-      // Validate parsed data structure
       if (parsed && typeof parsed === 'object' && parsed.timestamp) {
-        // Check if data has expired
         if (parsed.expiresAt && new Date(parsed.expiresAt) < new Date()) {
           localStorage.removeItem(sanitizedKey);
           return defaultValue || null;
@@ -242,7 +250,6 @@ export const storage = {
       return parsed;
     } catch (error) {
       console.error('Failed to get from localStorage:', error);
-      // Try to remove corrupted data
       try {
         localStorage.removeItem(sanitizedKey);
       } catch (removeError) {
@@ -258,7 +265,6 @@ export const storage = {
       return false;
     }
     
-    // Sanitize key to prevent injection
     const sanitizedKey = sanitizeText(key);
     if (sanitizedKey !== key) {
       console.error('Storage key contains invalid characters');
@@ -279,7 +285,6 @@ export const storage = {
       
       const serialized = JSON.stringify(dataToStore);
       
-      // Check storage quota (5MB limit)
       if (serialized.length > 5 * 1024 * 1024) {
         console.error('Data too large for localStorage');
         return false;
@@ -289,30 +294,6 @@ export const storage = {
       return true;
     } catch (error) {
       console.error('Failed to save to localStorage:', error);
-      
-      // Handle quota exceeded error
-      if (error instanceof DOMException && error.code === 22) {
-        console.error('localStorage quota exceeded');
-        // Cleanup expired data
-        try {
-          const keys = Object.keys(localStorage);
-          keys.forEach(k => {
-            try {
-              const item = localStorage.getItem(k);
-              if (item) {
-                const parsed = JSON.parse(item);
-                if (parsed.expiresAt && new Date(parsed.expiresAt) < new Date()) {
-                  localStorage.removeItem(k);
-                }
-              }
-            } catch (cleanupError) {
-              console.error('Error during cleanup:', cleanupError);
-            }
-          });
-        } catch (cleanupError) {
-          console.error('Failed to cleanup localStorage:', cleanupError);
-        }
-      }
       return false;
     }
   },
@@ -359,7 +340,7 @@ export const storage = {
   }
 };
 
-// Enhanced error handling with better sanitization
+// Error handling
 interface ApiError {
   response?: {
     data?: {
@@ -375,13 +356,11 @@ interface ApiError {
 }
 
 export const handleApiError = (error: ApiError) => {
-  // Sanitize error messages to prevent XSS
   const sanitizeErrorMessage = (message: string): string => {
     if (typeof message !== 'string') return 'An error occurred';
-    return sanitizeText(message).slice(0, 200); // Limit length
+    return sanitizeText(message).slice(0, 200);
   };
 
-  // Handle validation errors
   if (error.response?.data?.errors) {
     const errors = error.response.data.errors;
     const firstErrorKey = Object.keys(errors)[0];
@@ -395,73 +374,25 @@ export const handleApiError = (error: ApiError) => {
     }
   }
 
-  // Handle specific HTTP status codes
   if (error.response?.status) {
     switch (error.response.status) {
       case 400:
-        return {
-          message: 'Invalid request. Please check your input.',
-          code: 'BAD_REQUEST'
-        };
+        return { message: 'Invalid request. Please check your input.', code: 'BAD_REQUEST' };
       case 401:
-        return {
-          message: 'Your session has expired. Please log in again.',
-          code: 'UNAUTHORIZED'
-        };
+        return { message: 'Your session has expired. Please log in again.', code: 'UNAUTHORIZED' };
       case 403:
-        return {
-          message: 'You do not have permission to perform this action.',
-          code: 'FORBIDDEN'
-        };
+        return { message: 'You do not have permission to perform this action.', code: 'FORBIDDEN' };
       case 404:
-        return {
-          message: 'The requested resource was not found.',
-          code: 'NOT_FOUND'
-        };
-      case 409:
-        return {
-          message: 'This action conflicts with existing data.',
-          code: 'CONFLICT'
-        };
-      case 422:
-        return {
-          message: 'The provided data is invalid.',
-          code: 'UNPROCESSABLE_ENTITY'
-        };
+        return { message: 'The requested resource was not found.', code: 'NOT_FOUND' };
       case 429:
-        return {
-          message: 'Too many requests. Please try again later.',
-          code: 'RATE_LIMITED'
-        };
+        return { message: 'Too many requests. Please try again later.', code: 'RATE_LIMITED' };
       case 500:
-        return {
-          message: 'An internal server error occurred. Please try again later.',
-          code: 'SERVER_ERROR'
-        };
-      case 502:
-        return {
-          message: 'Service temporarily unavailable. Please try again later.',
-          code: 'BAD_GATEWAY'
-        };
-      case 503:
-        return {
-          message: 'Service temporarily unavailable. Please try again later.',
-          code: 'SERVICE_UNAVAILABLE'
-        };
-      case 504:
-        return {
-          message: 'Request timeout. Please try again.',
-          code: 'GATEWAY_TIMEOUT'
-        };
+        return { message: 'An internal server error occurred. Please try again later.', code: 'SERVER_ERROR' };
       default:
-        return {
-          message: 'An unexpected error occurred. Please try again later.',
-          code: 'UNKNOWN_HTTP_ERROR'
-        };
+        return { message: 'An unexpected error occurred. Please try again later.', code: 'UNKNOWN_HTTP_ERROR' };
     }
   }
 
-  // Handle network errors
   if (error.message?.toLowerCase().includes('network') || error.name === 'NetworkError') {
     return {
       message: 'Unable to connect to the server. Please check your internet connection.',
@@ -469,38 +400,6 @@ export const handleApiError = (error: ApiError) => {
     };
   }
 
-  // Handle timeout errors
-  if (error.message?.toLowerCase().includes('timeout') || error.name === 'TimeoutError') {
-    return {
-      message: 'The request timed out. Please try again.',
-      code: 'TIMEOUT_ERROR'
-    };
-  }
-
-  // Handle specific error codes
-  if (error.code) {
-    switch (error.code) {
-      case 'ECONNABORTED':
-        return {
-          message: 'The request was aborted. Please try again.',
-          code: 'ABORTED_ERROR'
-        };
-      case 'ERR_NETWORK':
-        return {
-          message: 'Network error. Please check your connection.',
-          code: 'NETWORK_ERROR'
-        };
-      case 'ERR_INTERNET_DISCONNECTED':
-        return {
-          message: 'No internet connection. Please check your network.',
-          code: 'NO_INTERNET'
-        };
-      default:
-        break;
-    }
-  }
-
-  // Handle custom error messages
   if (error.response?.data?.message) {
     return {
       message: sanitizeErrorMessage(error.response.data.message),
@@ -508,7 +407,6 @@ export const handleApiError = (error: ApiError) => {
     };
   }
 
-  // Handle direct error messages
   if (error.message) {
     return {
       message: sanitizeErrorMessage(error.message),
@@ -516,26 +414,20 @@ export const handleApiError = (error: ApiError) => {
     };
   }
 
-  // Fallback error
   return {
     message: 'An unexpected error occurred. Please try again later.',
     code: 'UNKNOWN_ERROR'
   };
 };
 
-// Enhanced device detection with better security
+// Device detection
 export const isMobile = (): boolean => {
   try {
     if (typeof navigator === 'undefined') return false;
     
-    // Check for touch capability
     const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    
-    // Check user agent (less reliable but still useful)
     const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
     const isMobileUA = mobileRegex.test(navigator.userAgent);
-    
-    // Check screen size
     const isSmallScreen = window.innerWidth <= 768;
     
     return hasTouchScreen && (isMobileUA || isSmallScreen);
@@ -545,11 +437,10 @@ export const isMobile = (): boolean => {
   }
 };
 
-// Enhanced rate limiting utility with better memory management
+// Rate limiting utility
 export const createRateLimiter = (maxRequests: number, windowMs: number) => {
   const requests = new Map<string, number[]>();
   
-  // Cleanup old entries periodically
   const cleanup = () => {
     const now = Date.now();
     const windowStart = now - windowMs;
@@ -564,29 +455,22 @@ export const createRateLimiter = (maxRequests: number, windowMs: number) => {
     }
   };
   
-  // Run cleanup every 5 minutes
   setInterval(cleanup, 5 * 60 * 1000);
   
   return (identifier: string): boolean => {
-    // Sanitize identifier
     const sanitizedId = sanitizeText(identifier);
     if (!sanitizedId) return false;
     
     const now = Date.now();
     const windowStart = now - windowMs;
     
-    // Get existing requests for this identifier
     const userRequests = requests.get(sanitizedId) || [];
-    
-    // Filter out old requests
     const recentRequests = userRequests.filter(timestamp => timestamp > windowStart);
     
-    // Check if limit exceeded
     if (recentRequests.length >= maxRequests) {
       return false;
     }
     
-    // Add current request
     recentRequests.push(now);
     requests.set(sanitizedId, recentRequests);
     
@@ -594,17 +478,7 @@ export const createRateLimiter = (maxRequests: number, windowMs: number) => {
   };
 };
 
-// Content Security Policy helpers
-export const createCSPNonce = (): string => {
-  const array = new Uint8Array(16);
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(array);
-    return btoa(String.fromCharCode(...array));
-  }
-  return generateId();
-};
-
-// Enhanced debounce utility for performance
+// Performance utilities
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number,
@@ -627,7 +501,6 @@ export const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-// Enhanced throttle utility for performance
 export const throttle = <T extends (...args: any[]) => any>(
   func: T,
   limit: number
@@ -643,18 +516,16 @@ export const throttle = <T extends (...args: any[]) => any>(
   };
 };
 
-// Input validation for forms
+// Input validation
 export const validateInput = (value: string, type: 'text' | 'email' | 'password' | 'url', maxLength = 255): { isValid: boolean; error?: string } => {
   if (typeof value !== 'string') {
     return { isValid: false, error: 'Invalid input type' };
   }
   
-  // Check length
   if (value.length > maxLength) {
     return { isValid: false, error: `Input too long (max ${maxLength} characters)` };
   }
   
-  // Check for malicious content
   const maliciousPatterns = [
     /<script/i,
     /javascript:/i,
@@ -671,7 +542,6 @@ export const validateInput = (value: string, type: 'text' | 'email' | 'password'
     }
   }
   
-  // Type-specific validation
   switch (type) {
     case 'email':
       return { isValid: validateEmail(value), error: validateEmail(value) ? undefined : 'Invalid email format' };
