@@ -5,7 +5,7 @@ import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { Avatar } from '../components/ui/Avatar';
 import { Input } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const mockChats = [
   {
@@ -88,6 +88,7 @@ const mockChats = [
 export default function Messages() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedChat, setSelectedChat] = useState<typeof mockChats[0] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -105,6 +106,44 @@ export default function Messages() {
 
     loadData();
   }, [user?.id]);
+
+  // Handle starting a new chat from profile
+  useEffect(() => {
+    if (location.state?.startChatWith) {
+      const { startChatWith } = location.state;
+      
+      // Check if chat already exists
+      const existingChat = chats.find(chat => 
+        chat.participants.includes(startChatWith.id)
+      );
+      
+      if (existingChat) {
+        setSelectedChat(existingChat);
+      } else {
+        // Create new chat
+        const newChat = {
+          id: Date.now().toString(),
+          name: startChatWith.name,
+          avatar: startChatWith.avatar,
+          lastMessage: '',
+          timestamp: new Date(),
+          unreadCount: 0,
+          isOnline: true,
+          isTyping: false,
+          lastSeen: new Date(),
+          participants: [user?.id || '', startChatWith.id],
+          isGroup: false,
+          messages: []
+        };
+        
+        setChats(prev => [newChat, ...prev]);
+        setSelectedChat(newChat);
+      }
+      
+      // Clear the state
+      navigate('/messages', { replace: true });
+    }
+  }, [location.state, chats, user?.id, navigate]);
 
   const filteredChats = chats.filter(chat =>
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())

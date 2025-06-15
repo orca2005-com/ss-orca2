@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Edit2, Check, X, Camera, MapPin, Link as LinkIcon, Share2, Star, Award, Users, Copy, ExternalLink } from 'lucide-react';
+import { Edit2, Check, X, Camera, MapPin, Link as LinkIcon, Share2, Star, Award, Users, Copy, ExternalLink, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { useNavigate } from 'react-router-dom';
@@ -130,6 +130,19 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
       console.error('Native share failed:', error);
       setShowShareOptions(!showShareOptions);
     }
+  };
+
+  // Handle message button click
+  const handleMessage = () => {
+    navigate('/messages', { 
+      state: { 
+        startChatWith: {
+          id: profile.id,
+          name: profile.name,
+          avatar: profile.avatar
+        }
+      }
+    });
   };
 
   const getRoleIcon = (role: string) => {
@@ -499,6 +512,16 @@ export function EditableProfile({ profile, onSave, isEditing, onEditingChange, c
                   )
                 ) : (
                   <div className="flex flex-col space-y-3">
+                    {/* Message Button - NEW! */}
+                    <Button
+                      variant="primary"
+                      icon={MessageCircle}
+                      onClick={handleMessage}
+                      size="lg"
+                    >
+                      Message
+                    </Button>
+
                     {/* Follow Button for Other Users */}
                     <FollowButton 
                       userId={profile.id}
