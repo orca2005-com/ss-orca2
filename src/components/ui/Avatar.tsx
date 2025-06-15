@@ -1,7 +1,6 @@
 import React from 'react';
 import { OptimizedImage } from './OptimizedImage';
 import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
-import { Users } from 'lucide-react';
 
 interface AvatarProps {
   src: string;
@@ -10,7 +9,6 @@ interface AvatarProps {
   className?: string;
   onClick?: () => void;
   priority?: boolean;
-  showGroupIndicator?: boolean;
   quality?: 'low' | 'medium' | 'high';
 }
 
@@ -30,7 +28,6 @@ export function Avatar({
   className = '', 
   onClick, 
   priority = false,
-  showGroupIndicator = false,
   quality = 'low'
 }: AvatarProps) {
   const baseClasses = `${sizeClasses[size]} rounded-full object-cover border-2 border-white/10 transition-all duration-200`;
@@ -38,21 +35,13 @@ export function Avatar({
   const finalClasses = `${baseClasses} ${interactiveClasses} ${className}`;
 
   return (
-    <div className="relative inline-block">
-      <OptimizedImage
-        src={getOptimizedPexelsUrl(src, quality)}
-        alt={alt}
-        className={finalClasses}
-        placeholder={createPlaceholderUrl(src)}
-        priority={priority}
-        onClick={onClick}
-      />
-      
-      {showGroupIndicator && (
-        <div className="absolute bottom-0 right-0 w-4 h-4 bg-accent rounded-full border-2 border-dark-lighter flex items-center justify-center">
-          <Users className="w-2.5 h-2.5 text-white" />
-        </div>
-      )}
-    </div>
+    <OptimizedImage
+      src={getOptimizedPexelsUrl(src, quality)}
+      alt={alt}
+      className={finalClasses}
+      placeholder={createPlaceholderUrl(src)}
+      priority={priority}
+      onClick={onClick}
+    />
   );
 }

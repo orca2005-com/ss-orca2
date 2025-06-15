@@ -164,7 +164,6 @@ export default function Messages() {
               alt={selectedChat.name}
               size="sm"
               onClick={() => handleChatProfileClick(selectedChat.id, {} as React.MouseEvent)}
-              showGroupIndicator={selectedChat.isGroup}
             />
             <div className="text-left">
               <h3 className="font-medium text-sm text-white hover:text-accent transition-colors">{selectedChat.name}</h3>
@@ -235,7 +234,6 @@ export default function Messages() {
                     src={chat.avatar}
                     alt={chat.name}
                     size="md"
-                    showGroupIndicator={chat.isGroup}
                   />
                 </button>
                 <button
@@ -275,7 +273,6 @@ export default function Messages() {
                   src={selectedChat.avatar}
                   alt={selectedChat.name}
                   size="md"
-                  showGroupIndicator={selectedChat.isGroup}
                 />
                 <div className="text-left">
                   <h3 className="font-semibold text-white hover:text-accent transition-colors">{selectedChat.name}</h3>
