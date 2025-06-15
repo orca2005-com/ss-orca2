@@ -85,7 +85,7 @@ export function Navbar() {
                 alt="SportNet Logo" 
                 className="w-8 h-8 object-contain"
               />
-              <span className="text-xl font-bold text-accent">SportNet</span>
+              <span className="text-xl font-bold text-accent">SportSYNC</span>
             </Link>
           </div>
 
