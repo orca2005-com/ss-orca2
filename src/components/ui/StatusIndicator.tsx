@@ -30,7 +30,7 @@ export function StatusIndicator({
   
   return (
     <div className={`flex items-center space-x-1 ${className}`}>
-      <div className={`${sizeClasses[size]} ${config.color} rounded-full`} />
+      <div className={`${sizeClasses[size]} ${config.color} rounded-full border-2 border-dark-lighter`} />
       {showText && (
         <span className="text-xs text-gray-400">{config.text}</span>
       )}
