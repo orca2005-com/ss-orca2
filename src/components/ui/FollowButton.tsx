@@ -82,13 +82,17 @@ export function FollowButton({
     return UserPlus;
   };
 
+  // THIS IS THE KEY LOGIC FOR COLORS:
   const getFollowButtonStyle = () => {
     if (followStatus === 'follows_you') {
+      // BLUE: When they follow you but you don't follow them back
       return 'bg-blue-500 text-white hover:bg-blue-600';
     }
     if (followStatus === 'following') {
+      // LIGHT BLUE/ACCENT: When you're already following them
       return 'bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30';
     }
+    // GREEN: Default follow button
     return 'bg-accent text-white hover:bg-accent-dark';
   };
 
