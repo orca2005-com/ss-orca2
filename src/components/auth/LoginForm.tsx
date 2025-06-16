@@ -130,7 +130,6 @@ export function LoginForm({ onSubmit, prefillEmail = '', isBlocked, blockTimeLef
             transition-all duration-200 text-white placeholder-gray-400 ${
               (isBlocked || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''
             }`}
-            style={{ fontSize: '16px' }} // Prevent zoom on iOS
           />
         </div>
 
@@ -151,13 +150,12 @@ export function LoginForm({ onSubmit, prefillEmail = '', isBlocked, blockTimeLef
             transition-all duration-200 text-white placeholder-gray-400 ${
               (isBlocked || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''
             }`}
-            style={{ fontSize: '16px' }} // Prevent zoom on iOS
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             disabled={isBlocked || isSubmitting}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50 ultra-touch"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -190,7 +188,7 @@ export function LoginForm({ onSubmit, prefillEmail = '', isBlocked, blockTimeLef
         type="submit"
         disabled={isBlocked || isSubmitting}
         className={`w-full py-3 px-4 bg-accent hover:bg-accent-light text-white rounded-lg font-medium
-        transition-colors duration-200 flex items-center justify-center space-x-2 ultra-touch ${
+        transition-colors duration-200 flex items-center justify-center space-x-2 ${
           (isBlocked || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''
         }`}
         aria-label={isBlocked ? `Try again in ${blockTimeLeft} seconds` : isSubmitting ? 'Signing in...' : 'Sign in'}
