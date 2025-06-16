@@ -257,27 +257,28 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-dark py-4 md:py-8 pb-20 md:pb-8">
-      {/* Mobile Layout */}
-      <div className="block lg:hidden max-w-4xl mx-auto px-4 space-y-4">
-        {/* User Profile Header */}
-        <div className="bg-dark-lighter rounded-xl p-3 md:p-4">
+    <div className="min-h-screen bg-dark mobile-optimized">
+      {/* Mobile-first Layout */}
+      <div className="max-w-4xl mx-auto mobile-padding pb-20 md:pb-8 pt-4 md:pt-8">
+        
+        {/* Mobile Profile Header */}
+        <div className="card-mobile mb-4">
           <button
             onClick={handleCurrentUserProfileClick}
-            className="flex items-center space-x-3 w-full hover:bg-dark/50 rounded-lg p-2 -m-2 transition-colors"
+            className="flex items-center space-x-3 w-full hover:bg-dark/50 rounded-lg ultra-touch -m-2 transition-colors"
           >
-            <div className="w-10 h-10 md:w-12 md:h-12">
+            <div className="w-12 h-12 flex-shrink-0">
               <img
                 src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"
                 alt="Profile"
                 className="w-full h-full rounded-full object-cover border-2 border-dark-light cursor-pointer hover:ring-2 hover:ring-accent transition-all"
               />
             </div>
-            <div className="flex-1 text-left">
-              <h3 className="text-sm md:text-base font-semibold text-white hover:text-accent transition-colors">{user?.name || 'Current User'}</h3>
+            <div className="flex-1 text-left min-w-0">
+              <h3 className="font-semibold text-white hover:text-accent transition-colors text-sm md:text-base truncate">{user?.name || 'Current User'}</h3>
               <p className="text-xs text-gray-400">{user?.role || 'Professional Athlete'}</p>
             </div>
-            <div className="flex space-x-3 text-center">
+            <div className="flex space-x-4 text-center flex-shrink-0">
               <div>
                 <p className="text-sm font-semibold text-white">8.5k</p>
                 <p className="text-xs text-gray-400">Followers</p>
@@ -290,19 +291,20 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Create Post - REMOVED DUPLICATE PROFILE PHOTO */}
-        <div className="bg-dark-lighter rounded-xl overflow-hidden">
-          <div className="p-4 space-y-4">
+        {/* Mobile-optimized Create Post */}
+        <div className="card-mobile mb-4">
+          <div className="space-y-4">
             <textarea
               value={newPost.content}
               onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
               placeholder="What's on your mind?"
-              className="w-full bg-dark text-white placeholder-gray-400 rounded-lg px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-accent ultra-touch"
+              className="w-full bg-dark text-white placeholder-gray-400 rounded-lg px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-accent ultra-touch border border-dark-light"
               rows={3}
+              style={{ fontSize: '16px' }} // Prevent zoom on iOS
             />
 
             {mediaFiles.length > 0 && (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="mobile-grid">
                 {mediaFiles.map((file, index) => (
                   <div key={index} className="relative group">
                     <img
@@ -312,7 +314,7 @@ export default function Home() {
                     />
                     <button
                       onClick={() => removeMedia(index)}
-                      className="absolute top-2 right-2 p-1 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ultra-touch"
+                      className="absolute top-2 right-2 ultra-touch bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="w-4 h-4 text-white" />
                     </button>
@@ -322,7 +324,7 @@ export default function Home() {
             )}
           </div>
 
-          <div className="border-t border-dark-light p-4">
+          <div className="border-t border-dark-light pt-4 mt-4">
             <div className="flex items-center justify-between">
               <div className="flex space-x-4">
                 <button
@@ -330,20 +332,20 @@ export default function Home() {
                   className="flex items-center space-x-2 text-gray-400 hover:text-accent transition-colors ultra-touch"
                 >
                   <ImageIcon className="w-5 h-5" />
-                  <span className="text-sm">Photo</span>
+                  <span className="text-sm hidden sm:inline">Photo</span>
                 </button>
                 <button
                   onClick={() => document.getElementById('media-upload')?.click()}
                   className="flex items-center space-x-2 text-gray-400 hover:text-accent transition-colors ultra-touch"
                 >
                   <Video className="w-5 h-5" />
-                  <span className="text-sm">Video</span>
+                  <span className="text-sm hidden sm:inline">Video</span>
                 </button>
               </div>
               <button
                 onClick={handleCreatePost}
                 disabled={!newPost.content.trim() && mediaFiles.length === 0}
-                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed ultra-touch"
+                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed ultra-touch text-sm font-medium"
               >
                 Post
               </button>
@@ -359,10 +361,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Enhanced Mobile Feed Filter */}
-        <div className="bg-dark-lighter rounded-xl p-4">
+        {/* Mobile-optimized Feed Filter */}
+        <div className="card-mobile mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-white">Feed</h2>
+            <h2 className="heading-mobile">Feed</h2>
             <div className="flex items-center space-x-2">
               <Filter className="h-5 w-5 text-gray-400" />
             </div>
@@ -430,6 +432,7 @@ export default function Home() {
                       placeholder="Enter role (e.g., nutritionist)"
                       className="flex-1 px-3 py-2 bg-dark-lighter border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-white placeholder-gray-400 text-sm"
                       onKeyPress={(e) => e.key === 'Enter' && handleCustomRoleSubmit()}
+                      style={{ fontSize: '16px' }} // Prevent zoom on iOS
                     />
                     <button
                       onClick={handleCustomRoleSubmit}
@@ -476,7 +479,7 @@ export default function Home() {
                   </div>
                   <button
                     onClick={clearCustomFilter}
-                    className="text-gray-400 hover:text-gray-300 transition-colors ultra-touch p-1"
+                    className="text-gray-400 hover:text-gray-300 transition-colors ultra-touch"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -486,7 +489,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Posts */}
+        {/* Mobile-optimized Posts */}
         <div className="space-y-4">
           <AnimatePresence>
             {filteredPosts.map((post) => (
@@ -503,222 +506,6 @@ export default function Home() {
               {removedPosts.size > 0 ? 'No more posts to show' : 'No posts to show'}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Desktop Layout */}
-      <div className="hidden lg:block max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Sidebar */}
-          <div className="col-span-3 space-y-6">
-            <div className="bg-dark-lighter rounded-xl overflow-hidden">
-              <div className="h-20 bg-gradient-to-r from-accent to-accent-dark"></div>
-              <div className="p-4 -mt-10">
-                <button
-                  onClick={handleCurrentUserProfileClick}
-                  className="block w-full text-left hover:bg-dark/50 rounded-lg p-2 -m-2 transition-colors"
-                >
-                  <div className="flex flex-col items-center">
-                    <img
-                      src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"
-                      alt="Profile"
-                      className="w-20 h-20 rounded-full border-4 border-dark-lighter object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all"
-                    />
-                    <h3 className="mt-3 text-lg font-semibold text-white hover:text-accent transition-colors">{user?.name || 'Current User'}</h3>
-                    <p className="text-sm text-gray-400">{user?.role || 'Professional Athlete'}</p>
-                    <p className="text-xs text-gray-500 mt-1 text-center">Basketball • New York, USA</p>
-                  </div>
-                </button>
-                
-                <div className="mt-4 pt-4 border-t border-dark-light">
-                  <div className="flex justify-between text-center">
-                    <div>
-                      <p className="text-lg font-semibold text-white">8.5k</p>
-                      <p className="text-xs text-gray-400">Followers</p>
-                    </div>
-                    <div>
-                      <p className="text-lg font-semibold text-white">2.1k</p>
-                      <p className="text-xs text-gray-400">Following</p>
-                    </div>
-                    <div>
-                      <p className="text-lg font-semibold text-white">156</p>
-                      <p className="text-xs text-gray-400">Posts</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Center Feed - Now spans more columns */}
-          <div className="col-span-9 space-y-6">
-            {/* Create Post - REMOVED DUPLICATE PROFILE PHOTO */}
-            <div className="bg-dark-lighter rounded-xl overflow-hidden">
-              <div className="p-4 space-y-4">
-                <textarea
-                  value={newPost.content}
-                  onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                  placeholder="Share your sports journey..."
-                  className="w-full bg-dark text-white placeholder-gray-400 rounded-lg px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-accent"
-                  rows={3}
-                />
-
-                {mediaFiles.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {mediaFiles.map((file, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Upload preview ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                        <button
-                          onClick={() => removeMedia(index)}
-                          className="absolute top-2 right-2 p-1 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-4 h-4 text-white" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-dark-light p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex space-x-6">
-                    <button
-                      onClick={() => document.getElementById('desktop-media-upload')?.click()}
-                      className="flex items-center space-x-2 text-gray-400 hover:text-accent transition-colors"
-                    >
-                      <ImageIcon className="w-5 h-5" />
-                      <span className="text-sm">Photo</span>
-                    </button>
-                    <button
-                      onClick={() => document.getElementById('desktop-media-upload')?.click()}
-                      className="flex items-center space-x-2 text-gray-400 hover:text-accent transition-colors"
-                    >
-                      <Video className="w-5 h-5" />
-                      <span className="text-sm">Video</span>
-                    </button>
-                  </div>
-                  <button
-                    onClick={handleCreatePost}
-                    disabled={!newPost.content.trim() && mediaFiles.length === 0}
-                    className="px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Post
-                  </button>
-                </div>
-                <input
-                  id="desktop-media-upload"
-                  type="file"
-                  accept="image/*,video/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleMediaUpload}
-                />
-              </div>
-            </div>
-
-            {/* Feed Filter */}
-            <div className="bg-dark-lighter rounded-xl p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">Latest Updates</h2>
-                <div className="flex items-center space-x-2">
-                  <Filter className="h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <select
-                  value={selectedRole === 'all' && !customRole ? 'all' : selectedRole}
-                  onChange={(e) => handleRoleFilterChange(e.target.value)}
-                  className="bg-dark text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                >
-                  <option value="all">All Posts</option>
-                  <option value="player">Players</option>
-                  <option value="team">Teams</option>
-                  <option value="coach">Coaches</option>
-                  <option value="other">Other (Custom)</option>
-                </select>
-
-                {showCustomInput && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-3"
-                  >
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={customRole}
-                        onChange={(e) => setCustomRole(e.target.value)}
-                        placeholder="Enter role (e.g., nutritionist, physiotherapist)"
-                        className="flex-1 px-3 py-2 bg-dark border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-white placeholder-gray-400 text-sm"
-                        onKeyPress={(e) => e.key === 'Enter' && handleCustomRoleSubmit()}
-                      />
-                      <button
-                        onClick={handleCustomRoleSubmit}
-                        disabled={!customRole.trim()}
-                        className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 text-sm"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {['nutritionist', 'physiotherapist', 'psychologist', 'journalist', 'agent', 'trainer'].map((role) => (
-                        <button
-                          key={role}
-                          onClick={() => {
-                            setCustomRole(role);
-                            setSelectedRole(role);
-                            setShowCustomInput(false);
-                          }}
-                          className="px-3 py-1 text-xs bg-dark border border-dark-light rounded text-gray-300 hover:border-accent hover:text-accent transition-colors"
-                        >
-                          {role}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {selectedRole !== 'all' && selectedRole !== 'player' && selectedRole !== 'team' && selectedRole !== 'coach' && (
-                  <div className="flex items-center justify-between p-3 bg-accent/10 border border-accent/30 rounded-lg">
-                    <span className="text-sm text-accent font-medium">Filtering by: {selectedRole}</span>
-                    <button
-                      onClick={clearCustomFilter}
-                      className="text-gray-400 hover:text-gray-300 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Posts */}
-            <div className="space-y-6">
-              <AnimatePresence>
-                {filteredPosts.map((post) => (
-                  <FeedItem 
-                    key={post.id}
-                    post={post} 
-                    onRemovePost={handleRemovePost}
-                    currentUserId={user?.id}
-                  />
-                ))}
-              </AnimatePresence>
-              {filteredPosts.length === 0 && (
-                <div className="text-center py-8 text-gray-400">
-                  {removedPosts.size > 0 ? 'No more posts to show' : 'No posts to show'}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>

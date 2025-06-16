@@ -208,29 +208,29 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
       }}
       exit={{ opacity: 0, scale: 0.9, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="bg-dark-lighter rounded-xl p-4 space-y-4"
+      className="card-mobile"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <button 
-          className="flex items-center space-x-3 ultra-touch hover:bg-dark/50 rounded-lg p-2 -m-2 transition-colors"
+          className="flex items-center space-x-3 ultra-touch hover:bg-dark/50 rounded-lg -m-2 transition-colors flex-1 min-w-0"
           onClick={handleViewProfile}
         >
           <OptimizedImage
             src={getOptimizedPexelsUrl(post.author.avatar, 'low')}
             alt={post.author.name}
-            className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all"
+            className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-accent transition-all flex-shrink-0"
             placeholder={createPlaceholderUrl(post.author.avatar)}
             priority={false}
           />
-          <div className="text-left">
-            <h3 className="font-semibold text-white hover:text-accent transition-colors cursor-pointer">
+          <div className="text-left min-w-0 flex-1">
+            <h3 className="font-semibold text-white hover:text-accent transition-colors cursor-pointer text-sm truncate">
               {post.author.name}
             </h3>
-            <span className="text-sm text-gray-400">{post.author.role}</span>
+            <span className="text-xs text-gray-400">{post.author.role}</span>
           </div>
         </button>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-shrink-0">
           {!isOwnPost && (
             <FollowButton 
               userId={post.author.id}
@@ -243,7 +243,7 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
           <div className="relative" ref={postMenuRef}>
             <button
               onClick={() => setShowPostMenu(!showPostMenu)}
-              className="p-2 text-gray-400 hover:text-gray-300 hover:bg-dark/50 rounded-full transition-colors ultra-touch"
+              className="ultra-touch text-gray-400 hover:text-gray-300 hover:bg-dark/50 rounded-full transition-colors"
               title="More options"
             >
               <MoreHorizontal className="w-5 h-5" />
@@ -271,44 +271,46 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
         </div>
       </div>
 
-      <p className="text-gray-300">{post.content}</p>
+      <p className="text-gray-300 mb-4 text-responsive leading-relaxed">{post.content}</p>
 
       {mediaItems.length > 0 && (
-        <MediaGrid 
-          media={mediaItems}
-          maxItems={4}
-          showViewAll={true}
-        />
+        <div className="mb-4">
+          <MediaGrid 
+            media={mediaItems}
+            maxItems={4}
+            showViewAll={true}
+          />
+        </div>
       )}
 
-      <div className="flex items-center justify-between pt-2 border-t border-dark-light">
+      <div className="flex items-center justify-between pt-3 border-t border-dark-light">
         <button
           onClick={handleLike}
           className={clsx(
-            'flex items-center space-x-2 ultra-touch',
+            'flex items-center space-x-2 ultra-touch rounded-lg',
             liked ? 'text-accent' : 'text-gray-400 hover:text-gray-300'
           )}
         >
           <Heart className={clsx('w-5 h-5', liked && 'fill-current')} />
-          <span>{likesCount}</span>
+          <span className="text-sm">{likesCount}</span>
         </button>
 
         <button
           onClick={() => setShowComments(!showComments)}
-          className="flex items-center space-x-2 text-gray-400 hover:text-gray-300 ultra-touch"
+          className="flex items-center space-x-2 text-gray-400 hover:text-gray-300 ultra-touch rounded-lg"
         >
           <MessageCircle className="w-5 h-5" />
-          <span>{commentsCount}</span>
+          <span className="text-sm">{commentsCount}</span>
         </button>
 
         {/* Enhanced Share Button with Menu */}
         <div className="relative" ref={shareMenuRef}>
           <button
             onClick={() => handleShare()}
-            className="flex items-center space-x-2 text-gray-400 hover:text-gray-300 ultra-touch"
+            className="flex items-center space-x-2 text-gray-400 hover:text-gray-300 ultra-touch rounded-lg"
           >
             <Share2 className="w-5 h-5" />
-            <span>{sharesCount}</span>
+            <span className="text-sm">{sharesCount}</span>
           </button>
 
           {showShareMenu && (
@@ -372,9 +374,9 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
       </div>
 
       {showComments && (
-        <div className="space-y-4 border-t border-dark-light pt-4">
+        <div className="space-y-4 border-t border-dark-light pt-4 mt-4">
           {comments.length > 0 && (
-            <div className="space-y-3 max-h-60 overflow-y-auto">
+            <div className="space-y-3 max-h-60 overflow-y-auto mobile-scroll">
               {comments.map((comment) => (
                 <div key={comment.id} className="flex items-start space-x-3 group">
                   <img
@@ -389,7 +391,7 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
                         {comment.author.id === currentUserId && (
                           <button
                             onClick={() => handleDeleteComment(comment.id)}
-                            className="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                            className="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity text-xs ultra-touch"
                           >
                             Delete
                           </button>
@@ -406,9 +408,9 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
             </div>
           )}
 
-          {/* FIXED: Mobile Comment Input Layout */}
+          {/* Mobile-optimized Comment Input */}
           <form onSubmit={handleAddComment} className="space-y-3">
-            <div className="flex items-start space-x-2">
+            <div className="flex items-start space-x-3">
               <img
                 src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"
                 alt="Your avatar"
@@ -419,21 +421,22 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Write a comment..."
-                  className="w-full bg-dark text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent ultra-touch text-sm placeholder-gray-400 resize-none"
+                  className="w-full bg-dark text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent ultra-touch text-sm placeholder-gray-400 resize-none border border-dark-light"
                   rows={2}
+                  style={{ fontSize: '16px' }} // Prevent zoom on iOS
                 />
               </div>
             </div>
             
-            {/* Send Button - Now Full Width on Mobile */}
-            <div className="flex justify-end">
+            {/* Mobile-optimized Send Button */}
+            <div className="flex justify-end pl-11">
               <button
                 type="submit"
                 disabled={!newComment.trim()}
-                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark disabled:opacity-50 disabled:cursor-not-allowed ultra-touch transition-colors flex items-center space-x-2"
+                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark disabled:opacity-50 disabled:cursor-not-allowed ultra-touch transition-colors flex items-center space-x-2 min-w-[80px] justify-center"
               >
                 <Send className="h-4 w-4" />
-                <span className="text-sm">Send</span>
+                <span className="text-sm font-medium">Send</span>
               </button>
             </div>
           </form>
