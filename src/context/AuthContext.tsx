@@ -53,6 +53,7 @@ interface AuthContextType {
   markAllNotificationsAsRead: () => Promise<void>;
   unreadMessages: number;
   unreadNotifications: number;
+  canModify: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -221,11 +222,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       if (data.user) {
-        // User will be automatically created in the database via trigger
-        navigate('/login', {
+        // Store signup data for profile creation
+        localStorage.setItem('signupData', JSON.stringify({
+          email: signupData.email,
+          fullName: signupData.fullName,
+          role: signupData.role
+        }));
+
+        // Navigate to profile creation page
+        navigate('/create-profile', {
           state: {
-            message: 'Account created successfully! Please check your email to verify your account.',
-            email: signupData.email
+            role: signupData.role,
+            email: signupData.email,
+            fullName: signupData.fullName
           }
         });
       }
@@ -379,7 +388,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       markNotificationAsRead,
       markAllNotificationsAsRead,
       unreadMessages,
-      unreadNotifications
+      unreadNotifications,
+      canModify: !!user
     }}>
       {children}
     </AuthContext.Provider>
