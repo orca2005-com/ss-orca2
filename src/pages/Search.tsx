@@ -198,12 +198,12 @@ export default function Search() {
                 'physiotherapist', 
                 'sports psychologist', 
                 'tennis player',
-                'coach in London',
+                'coach in India',
                 'trainer',
                 'sports journalist',
                 'referee',
                 'agent',
-                'player in New York'
+                'player in Pune'
               ].map((suggestion) => (
                 <button
                   key={suggestion}
@@ -233,10 +233,10 @@ export default function Search() {
             <div>
               <h4 className="text-accent font-medium mb-2">Location-based searches:</h4>
               <ul className="space-y-1 text-xs">
-                <li>• "coach in London"</li>
-                <li>• "player from New York"</li>
-                <li>• "trainer in Toronto"</li>
-                <li>• "agent from Miami"</li>
+                <li>• "coach in India"</li>
+                <li>• "player from Pune"</li>
+                <li>• "trainer in Delhi"</li>
+                <li>• "agent from Mumbai"</li>
               </ul>
             </div>
           </div>
