@@ -1,6 +1,7 @@
 import React from 'react';
 import { OptimizedImage } from './OptimizedImage';
 import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
+import { isValidUrl } from '../../utils';
 
 interface AvatarProps {
   src: string;
@@ -21,6 +22,8 @@ const sizeClasses = {
   '2xl': 'w-20 h-20'
 };
 
+const DEFAULT_AVATAR = 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg';
+
 export function Avatar({ 
   src, 
   alt, 
@@ -34,8 +37,22 @@ export function Avatar({
   const interactiveClasses = onClick ? 'cursor-pointer hover:ring-2 hover:ring-accent hover:scale-105' : '';
   const finalClasses = `${baseClasses} ${interactiveClasses} ${className}`;
 
-  // Ensure src is a valid URL or provide a fallback
-  const validSrc = src && typeof src === 'string' ? src : 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg';
+  // Validate and sanitize src
+  const getValidSrc = (): string => {
+    if (!src || typeof src !== 'string') {
+      return DEFAULT_AVATAR;
+    }
+
+    // Check if it's a valid URL
+    if (!isValidUrl(src)) {
+      console.warn('Invalid avatar URL, using default:', src);
+      return DEFAULT_AVATAR;
+    }
+
+    return src;
+  };
+
+  const validSrc = getValidSrc();
 
   return (
     <OptimizedImage

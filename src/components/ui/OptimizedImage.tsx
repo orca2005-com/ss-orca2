@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ImageOff, Loader } from 'lucide-react';
-import { sanitizeText, validateUrl } from '../../utils';
+import { sanitizeText, isValidUrl } from '../../utils';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -13,6 +13,8 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   className?: string;
   containerClassName?: string;
 }
+
+const DEFAULT_FALLBACK_IMAGE = 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg';
 
 export function OptimizedImage({
   src,
@@ -29,54 +31,68 @@ export function OptimizedImage({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isInView, setIsInView] = useState(priority);
-  const [currentSrc, setCurrentSrc] = useState<string | null>(priority ? src : null);
+  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Enhanced sanitization and validation
-  const sanitizedSrc = src ? sanitizeText(src) : '';
   const sanitizedAlt = alt ? sanitizeText(alt) : '';
-  const sanitizedPlaceholder = placeholder ? sanitizeText(placeholder) : undefined;
 
-  // Enhanced URL validation with security checks
-  const isValidUrl = useCallback((url: string): boolean => {
-    try {
-      if (!url || typeof url !== 'string') return false;
-      
-      // Basic URL validation
-      if (!validateUrl(url)) return false;
-      
-      const urlObj = new URL(url);
-      
-      // Additional security checks
-      if (!['http:', 'https:', 'data:'].includes(urlObj.protocol)) {
-        return false;
-      }
-      
-      // Block suspicious domains in production
-      if (process.env.NODE_ENV === 'production') {
-        const suspiciousDomains = ['localhost', '127.0.0.1', '0.0.0.0'];
-        if (suspiciousDomains.some(domain => urlObj.hostname.includes(domain))) {
-          return false;
-        }
-      }
-      
-      return true;
-    } catch {
-      return false;
+  // Validate and sanitize src
+  const getValidSrc = useCallback((inputSrc: string): string | null => {
+    if (!inputSrc || typeof inputSrc !== 'string') {
+      return null;
     }
+
+    const sanitized = sanitizeText(inputSrc);
+    if (!sanitized) {
+      return null;
+    }
+
+    // Check if it's a valid URL
+    if (!isValidUrl(sanitized)) {
+      console.warn('Invalid image URL:', sanitized);
+      return null;
+    }
+
+    return sanitized;
   }, []);
 
+  // Validate and sanitize placeholder
+  const getValidPlaceholder = useCallback((inputPlaceholder?: string): string | null => {
+    if (!inputPlaceholder || typeof inputPlaceholder !== 'string') {
+      return null;
+    }
+
+    const sanitized = sanitizeText(inputPlaceholder);
+    if (!sanitized || !isValidUrl(sanitized)) {
+      return null;
+    }
+
+    return sanitized;
+  }, []);
+
+  const validSrc = getValidSrc(src);
+  const validPlaceholder = getValidPlaceholder(placeholder);
+
   useEffect(() => {
-    if (priority) return;
+    if (priority) {
+      if (validSrc) {
+        setCurrentSrc(validSrc);
+      } else {
+        setHasError(true);
+        setIsLoading(false);
+      }
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
-          if (sanitizedSrc && isValidUrl(sanitizedSrc)) {
-            setCurrentSrc(sanitizedSrc);
+          if (validSrc) {
+            setCurrentSrc(validSrc);
           } else {
             setHasError(true);
             setIsLoading(false);
@@ -92,19 +108,7 @@ export function OptimizedImage({
     }
 
     return () => observer.disconnect();
-  }, [sanitizedSrc, priority, isValidUrl]);
-
-  // Validate src on mount for priority images
-  useEffect(() => {
-    if (priority) {
-      if (!sanitizedSrc || !isValidUrl(sanitizedSrc)) {
-        setHasError(true);
-        setIsLoading(false);
-      } else {
-        setCurrentSrc(sanitizedSrc);
-      }
-    }
-  }, [priority, sanitizedSrc, isValidUrl]);
+  }, [validSrc, priority]);
 
   const handleLoad = useCallback(() => {
     setIsLoading(false);
@@ -117,19 +121,28 @@ export function OptimizedImage({
     setIsLoading(false);
     
     // Enhanced retry logic with exponential backoff
-    if (retryCount < 2 && currentSrc) {
+    if (retryCount < 2 && validSrc) {
       const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000);
       setTimeout(() => {
         setRetryCount(prev => prev + 1);
         setIsLoading(true);
-        // Force reload by adding timestamp
-        try {
-          const url = new URL(currentSrc);
-          url.searchParams.set('retry', retryCount.toString());
-          url.searchParams.set('t', Date.now().toString());
-          setCurrentSrc(url.toString());
-        } catch {
-          setHasError(true);
+        // Try with default fallback if original fails
+        if (retryCount === 1) {
+          setCurrentSrc(DEFAULT_FALLBACK_IMAGE);
+        } else {
+          // Force reload by adding timestamp
+          try {
+            if (isValidUrl(validSrc)) {
+              const url = new URL(validSrc);
+              url.searchParams.set('retry', retryCount.toString());
+              url.searchParams.set('t', Date.now().toString());
+              setCurrentSrc(url.toString());
+            } else {
+              setCurrentSrc(DEFAULT_FALLBACK_IMAGE);
+            }
+          } catch {
+            setCurrentSrc(DEFAULT_FALLBACK_IMAGE);
+          }
         }
       }, retryDelay);
       return;
@@ -137,55 +150,7 @@ export function OptimizedImage({
     
     setHasError(true);
     onError?.();
-  }, [onError, retryCount, currentSrc]);
-
-  // Enhanced security: Prevent loading of potentially malicious URLs
-  const shouldBlockUrl = useCallback((url: string): boolean => {
-    if (!url) return true;
-    
-    try {
-      const urlObj = new URL(url);
-      
-      // Block non-HTTP(S) protocols except data URLs for placeholders
-      if (!['http:', 'https:', 'data:'].includes(urlObj.protocol)) {
-        return true;
-      }
-      
-      // Enhanced security checks
-      const hostname = urlObj.hostname.toLowerCase();
-      
-      // Block localhost and private IPs in production
-      if (process.env.NODE_ENV === 'production') {
-        if (
-          hostname === 'localhost' ||
-          hostname.startsWith('127.') ||
-          hostname.startsWith('192.168.') ||
-          hostname.startsWith('10.') ||
-          hostname.match(/^172\.(1[6-9]|2[0-9]|3[01])\./) ||
-          hostname === '0.0.0.0' ||
-          hostname.includes('..') // Path traversal attempt
-        ) {
-          return true;
-        }
-      }
-      
-      // Block suspicious patterns
-      const suspiciousPatterns = [
-        /javascript:/i,
-        /vbscript:/i,
-        /data:text\/html/i,
-        /data:application/i
-      ];
-      
-      if (suspiciousPatterns.some(pattern => pattern.test(url))) {
-        return true;
-      }
-      
-      return false;
-    } catch {
-      return true;
-    }
-  }, []);
+  }, [onError, retryCount, validSrc]);
 
   const defaultFallback = (
     <div className={`flex items-center justify-center bg-dark-lighter ${className}`}>
@@ -193,10 +158,9 @@ export function OptimizedImage({
     </div>
   );
 
-  // Block malicious URLs
-  if (currentSrc && shouldBlockUrl(currentSrc)) {
-    console.warn('Blocked potentially malicious image URL:', currentSrc);
-    return fallback || defaultFallback;
+  // If no valid source and no fallback, show error
+  if (!validSrc && !fallback) {
+    return defaultFallback;
   }
 
   if (hasError) {
@@ -207,12 +171,14 @@ export function OptimizedImage({
     <div ref={containerRef} className={`relative overflow-hidden ${containerClassName}`}>
       {isLoading && (
         <div className={`absolute inset-0 flex items-center justify-center bg-dark-lighter ${className}`}>
-          {sanitizedPlaceholder ? (
+          {validPlaceholder ? (
             <img 
-              src={sanitizedPlaceholder} 
+              src={validPlaceholder} 
               alt="" 
               className={`w-full h-full object-cover filter blur-sm ${className}`}
-              onError={() => setHasError(true)}
+              onError={() => {
+                console.warn('Placeholder image failed to load');
+              }}
             />
           ) : (
             <Loader className="w-4 h-4 text-accent animate-spin" />
@@ -229,9 +195,9 @@ export function OptimizedImage({
           loading={priority ? 'eager' : 'lazy'}
           onLoad={handleLoad}
           onError={handleError}
-          crossOrigin="anonymous" // Security: Prevent CORS issues
-          referrerPolicy="no-referrer" // Security: Don't send referrer
-          decoding="async" // Performance: Async decoding
+          crossOrigin="anonymous"
+          referrerPolicy="no-referrer"
+          decoding="async"
           {...props}
         />
       )}

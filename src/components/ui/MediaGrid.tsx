@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { OptimizedImage } from './OptimizedImage';
 import { MediaViewer } from './MediaViewer';
 import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
+import { isValidUrl } from '../../utils';
 
 interface MediaItem {
   id: string;
@@ -31,8 +32,21 @@ export function MediaGrid({
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Filter out invalid media items
-  const validMedia = media.filter(item => item && item.url && typeof item.url === 'string');
+  // Filter out invalid media items and validate URLs
+  const validMedia = media.filter(item => {
+    if (!item || !item.url || typeof item.url !== 'string') {
+      console.warn('Invalid media item:', item);
+      return false;
+    }
+    
+    if (!isValidUrl(item.url)) {
+      console.warn('Invalid media URL:', item.url);
+      return false;
+    }
+    
+    return true;
+  });
+
   const displayedMedia = validMedia.slice(0, maxItems);
   const remainingCount = validMedia.length - maxItems;
 
@@ -78,13 +92,23 @@ export function MediaGrid({
                 />
               ) : (
                 <div className="w-full h-full bg-dark-lighter flex items-center justify-center">
-                  <video
-                    src={item.url}
-                    className="w-full h-full object-cover"
-                    muted
-                    playsInline
-                    preload="metadata"
-                  />
+                  {isValidUrl(item.url) ? (
+                    <video
+                      src={item.url}
+                      className="w-full h-full object-cover"
+                      muted
+                      playsInline
+                      preload="metadata"
+                      onError={(e) => {
+                        console.warn('Video failed to load:', item.url);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-dark-lighter flex items-center justify-center">
+                      <Play className="w-8 h-8 text-gray-500" />
+                    </div>
+                  )}
                 </div>
               )}
 
