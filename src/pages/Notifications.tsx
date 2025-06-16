@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, Trash2 } from 'lucide-react';
+import { Bell, Check, Trash2, BookMarked as MarkAsRead } from 'lucide-react';
 import { NotificationItem } from '../components/notifications/NotificationItem';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
+import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const mockNotifications = [
   {
@@ -36,12 +38,36 @@ const mockNotifications = [
     content: 'started following you',
     timestamp: new Date(Date.now() - 1000 * 60 * 60),
     isRead: false,
+  },
+  {
+    id: '4',
+    type: 'message' as const,
+    user: {
+      name: 'Elite Sports Academy',
+      avatar: 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg',
+    },
+    content: 'sent you a message',
+    timestamp: new Date(Date.now() - 1000 * 60 * 90),
+    isRead: false,
+  },
+  {
+    id: '5',
+    type: 'rating' as const,
+    user: {
+      name: 'Coach Martinez',
+      avatar: 'https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg',
+    },
+    content: 'rated your performance',
+    timestamp: new Date(Date.now() - 1000 * 60 * 120),
+    isRead: true,
   }
 ];
 
 export default function Notifications() {
+  const { markNotificationAsRead, markAllNotificationsAsRead } = useAuth();
   const [notifications, setNotifications] = useState<typeof mockNotifications>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -63,12 +89,20 @@ export default function Notifications() {
           : notification
       )
     );
+    markNotificationAsRead(id);
   };
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = async () => {
+    setIsMarkingAllRead(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     setNotifications(prev =>
       prev.map(notification => ({ ...notification, isRead: true }))
     );
+    markAllNotificationsAsRead();
+    setIsMarkingAllRead(false);
   };
 
   const handleDeleteNotification = (id: string) => {
@@ -87,9 +121,9 @@ export default function Notifications() {
   }
 
   return (
-    <div className="min-h-screen bg-dark py-4 md:py-8 pb-24 md:pb-8">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-dark-lighter rounded-xl p-4 md:p-6 mb-6">
+    <div className="min-h-screen bg-dark mobile-optimized">
+      <div className="max-w-2xl mx-auto mobile-padding pb-20 md:pb-8 pt-4 md:pt-8">
+        <div className="card-mobile">
           <div className="flex items-center justify-between mb-4 md:mb-6">
             <div className="flex items-center space-x-3">
               <div className="relative">
@@ -100,31 +134,42 @@ export default function Notifications() {
                   </div>
                 )}
               </div>
-              <h1 className="text-lg md:text-2xl font-bold text-white">Notifications</h1>
+              <h1 className="heading-mobile">Notifications</h1>
             </div>
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (
-                <button
+                <motion.button
                   onClick={handleMarkAllAsRead}
-                  className="flex items-center justify-center w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1.5 bg-dark text-gray-300 rounded-lg hover:bg-dark-light transition-colors text-xs md:text-sm ultra-touch"
+                  disabled={isMarkingAllRead}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-center ultra-touch bg-dark text-gray-300 rounded-lg hover:bg-dark-light transition-colors text-xs md:text-sm disabled:opacity-50"
                   title="Mark all as read"
                 >
-                  <Check className="w-4 h-4" />
-                  <span className="hidden md:inline ml-1">Mark all read</span>
-                </button>
+                  {isMarkingAllRead ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span className="hidden md:inline ml-1">Mark all read</span>
+                    </>
+                  )}
+                </motion.button>
               )}
             </div>
           </div>
 
           <div className="space-y-3">
-            {notifications.map((notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                onMarkAsRead={handleMarkAsRead}
-                onDelete={handleDeleteNotification}
-              />
-            ))}
+            <AnimatePresence>
+              {notifications.map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={handleMarkAsRead}
+                  onDelete={handleDeleteNotification}
+                />
+              ))}
+            </AnimatePresence>
             {notifications.length === 0 && (
               <div className="text-center py-8">
                 <Bell className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mx-auto mb-4" />
