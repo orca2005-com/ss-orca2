@@ -186,37 +186,6 @@ export default function Search() {
           )}
         </div>
 
-        {/* Search Suggestions */}
-        {searchQuery === '' && (
-          <div className="bg-dark-lighter p-4 rounded-lg">
-            <h3 className="text-white font-medium mb-3">Try searching for:</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {[
-                'football player', 
-                'basketball coach', 
-                'nutritionist', 
-                'physiotherapist', 
-                'sports psychologist', 
-                'tennis player',
-                'coach in India',
-                'trainer',
-                'sports journalist',
-                'referee',
-                'agent',
-                'player in Pune'
-              ].map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => setSearchQuery(suggestion)}
-                  className="px-3 py-2 text-xs bg-dark border border-dark-light rounded-lg text-gray-300 hover:border-accent hover:text-accent transition-colors text-left"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Natural Language Search Tips */}
         <div className="bg-dark-lighter p-4 rounded-lg">
           <h3 className="text-white font-medium mb-3">💡 Search Tips</h3>
