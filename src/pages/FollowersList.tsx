@@ -5,34 +5,51 @@ import { motion } from 'framer-motion';
 import { UserListItem } from '../components/ui/UserListItem';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { Input } from '../components/ui/Input';
-import { mockProfiles } from '../data/mockProfiles';
+import { db } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 export default function FollowersList() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(mockProfiles[id || '']);
+  const { user: currentUser } = useAuth();
+  const [followers, setFollowers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
-      if (!id || !mockProfiles[id]) {
+      if (!id) {
         navigate('/home');
         return;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setProfile(mockProfiles[id]);
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        
+        // Get user profile to display name
+        const userData = await db.getUser(id);
+        setProfileName(userData.full_name);
+        
+        // Get followers
+        const followersData = await db.getFollowers(id);
+        setFollowers(followersData);
+      } catch (err: any) {
+        console.error('Error loading followers:', err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadData();
   }, [id, navigate]);
 
-  const filteredFollowers = profile?.followers?.filter(follower =>
-    follower.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredFollowers = followers.filter(follower =>
+    follower.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     follower.role.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  );
 
   if (isLoading) {
     return (
@@ -45,11 +62,12 @@ export default function FollowersList() {
     );
   }
 
-  if (!profile) {
+  if (error) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Profile Not Found</h1>
+          <h1 className="text-2xl font-bold text-white mb-4">Error Loading Followers</h1>
+          <p className="text-gray-400 mb-6">{error}</p>
           <button
             onClick={() => navigate('/home')}
             className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors"
@@ -73,8 +91,8 @@ export default function FollowersList() {
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">{profile.name}'s Followers</h1>
-            <p className="text-gray-400">{profile.followers?.length || 0} followers</p>
+            <h1 className="text-2xl font-bold text-white">{profileName}'s Followers</h1>
+            <p className="text-gray-400">{followers.length} followers</p>
           </div>
         </div>
 
@@ -98,7 +116,7 @@ export default function FollowersList() {
             <div>
               <h2 className="text-lg font-semibold text-white">Followers</h2>
               <p className="text-sm text-gray-400">
-                {filteredFollowers.length} of {profile.followers?.length || 0} followers
+                {filteredFollowers.length} of {followers.length} followers
               </p>
             </div>
           </div>
@@ -113,7 +131,12 @@ export default function FollowersList() {
                   transition={{ delay: index * 0.05 }}
                 >
                   <UserListItem
-                    user={follower}
+                    user={{
+                      id: follower.id,
+                      name: follower.full_name,
+                      role: follower.role,
+                      avatar: follower.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
+                    }}
                     index={index}
                     hoverColor="green"
                   />

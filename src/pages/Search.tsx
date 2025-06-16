@@ -1,145 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import { Search as SearchIcon, Filter, MapPin, Users, Trophy } from 'lucide-react';
+import { Search as SearchIcon, Filter, MapPin, Users } from 'lucide-react';
 import { UserCard } from '../components/search/UserCard';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
-import { mockProfiles } from '../data/mockProfiles';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const mockUsers = Object.values(mockProfiles).map(profile => ({
-  id: profile.id,
-  name: profile.name,
-  avatar: profile.avatar,
-  role: profile.role,
-  sport: profile.sport,
-  location: profile.location,
-  skillLevel: 'Professional'
-}));
-
-// Add some custom role users for demonstration
-const additionalUsers = [
-  {
-    id: 'nutritionist1',
-    name: 'Dr. Emma Wilson',
-    avatar: 'https://images.pexels.com/photos/5327585/pexels-photo-5327585.jpeg',
-    role: 'Sports Nutritionist',
-    sport: 'Nutrition & Wellness',
-    location: 'Mumbai, India',
-    skillLevel: 'Expert'
-  },
-  {
-    id: 'physio1',
-    name: 'Mark Thompson',
-    avatar: 'https://images.pexels.com/photos/6975474/pexels-photo-6975474.jpeg',
-    role: 'Physiotherapist',
-    sport: 'Sports Medicine',
-    location: 'Delhi, India',
-    skillLevel: 'Certified'
-  },
-  {
-    id: 'psychologist1',
-    name: 'Dr. Sarah Chen',
-    avatar: 'https://images.pexels.com/photos/5327921/pexels-photo-5327921.jpeg',
-    role: 'Sports Psychologist',
-    sport: 'Mental Performance',
-    location: 'Bangalore, India',
-    skillLevel: 'PhD'
-  },
-  {
-    id: 'journalist1',
-    name: 'Alex Rivera',
-    avatar: 'https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg',
-    role: 'Sports Journalist',
-    sport: 'Sports Media',
-    location: 'Pune, India',
-    skillLevel: 'Senior Reporter'
-  },
-  {
-    id: 'agent1',
-    name: 'Michael Foster',
-    avatar: 'https://images.pexels.com/photos/3778876/pexels-photo-3778876.jpeg',
-    role: 'Sports Agent',
-    sport: 'Athlete Representation',
-    location: 'Chennai, India',
-    skillLevel: 'Licensed Agent'
-  },
-  {
-    id: 'trainer1',
-    name: 'Lisa Martinez',
-    avatar: 'https://images.pexels.com/photos/3768916/pexels-photo-3768916.jpeg',
-    role: 'Fitness Trainer',
-    sport: 'Personal Training',
-    location: 'Hyderabad, India',
-    skillLevel: 'Certified'
-  },
-  {
-    id: 'referee1',
-    name: 'David Kim',
-    avatar: 'https://images.pexels.com/photos/3621104/pexels-photo-3621104.jpeg',
-    role: 'Football Referee',
-    sport: 'Football Officiating',
-    location: 'Kolkata, India',
-    skillLevel: 'FIFA Certified'
-  }
-];
-
-const allUsers = [...mockUsers, ...additionalUsers];
+import { useSearch } from '../hooks/useSupabaseData';
 
 export default function Search() {
+  const { results, isLoading, error, search } = useSearch();
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [users, setUsers] = useState<typeof allUsers>([]);
   const [selectedFilters, setSelectedFilters] = useState({
     role: 'all',
     location: 'all',
     sport: 'all'
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [uniqueValues, setUniqueValues] = useState<{
+    role: string[];
+    location: string[];
+    sport: string[];
+  }>({
+    role: [],
+    location: [],
+    sport: []
+  });
 
+  // Initial search on component mount
   useEffect(() => {
-    const loadData = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setUsers(allUsers);
-      setIsLoading(false);
-    };
-
-    loadData();
+    search('');
   }, []);
 
-  // Enhanced search with filters
-  const filteredUsers = users.filter(user => {
-    if (!searchQuery.trim() && selectedFilters.role === 'all' && selectedFilters.location === 'all' && selectedFilters.sport === 'all') {
-      return true;
+  // Extract unique values for filters
+  useEffect(() => {
+    if (results.length > 0) {
+      const roles = [...new Set(results.map(user => user.role))].filter(Boolean);
+      const locations = [...new Set(results.map(user => user.location))].filter(Boolean);
+      const sports = [...new Set(results.map(user => user.sport))].filter(Boolean);
+      
+      setUniqueValues({
+        role: roles,
+        location: locations,
+        sport: sports
+      });
     }
-    
-    const query = searchQuery.toLowerCase();
-    const searchTerms = query.split(' ').filter(term => term.length > 0);
-    
-    // Create searchable text from user data
-    const searchableText = [
-      user.name,
-      user.role,
-      user.sport,
-      user.location,
-      user.skillLevel
-    ].join(' ').toLowerCase();
-    
-    // Check search query
-    const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => 
-      searchableText.includes(term)
-    );
+  }, [results]);
 
-    // Check filters
-    const matchesRole = selectedFilters.role === 'all' || 
-      user.role.toLowerCase().includes(selectedFilters.role.toLowerCase());
-    
-    const matchesLocation = selectedFilters.location === 'all' || 
-      user.location.toLowerCase().includes(selectedFilters.location.toLowerCase());
-    
-    const matchesSport = selectedFilters.sport === 'all' || 
-      user.sport.toLowerCase().includes(selectedFilters.sport.toLowerCase());
+  // Handle search when query or filters change
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      search(searchQuery, selectedFilters);
+    }, 500);
 
-    return matchesSearch && matchesRole && matchesLocation && matchesSport;
-  });
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, selectedFilters]);
 
   const handleFilterChange = (filterType: string, value: string) => {
     setSelectedFilters(prev => ({
@@ -155,14 +67,10 @@ export default function Search() {
       sport: 'all'
     });
     setSearchQuery('');
+    search('');
   };
 
-  const getUniqueValues = (key: keyof typeof allUsers[0]) => {
-    const values = [...new Set(allUsers.map(user => user[key]))];
-    return values.filter(Boolean);
-  };
-
-  if (isLoading) {
+  if (isLoading && results.length === 0) {
     return (
       <div className="fixed inset-0 bg-dark flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -222,7 +130,7 @@ export default function Search() {
                     style={{ fontSize: '16px' }}
                   >
                     <option value="all">All Roles</option>
-                    {getUniqueValues('role').map(role => (
+                    {uniqueValues.role.map(role => (
                       <option key={role} value={role}>{role}</option>
                     ))}
                   </select>
@@ -238,7 +146,7 @@ export default function Search() {
                     style={{ fontSize: '16px' }}
                   >
                     <option value="all">All Locations</option>
-                    {getUniqueValues('location').map(location => (
+                    {uniqueValues.location.map(location => (
                       <option key={location} value={location}>{location}</option>
                     ))}
                   </select>
@@ -254,7 +162,7 @@ export default function Search() {
                     style={{ fontSize: '16px' }}
                   >
                     <option value="all">All Sports</option>
-                    {getUniqueValues('sport').map(sport => (
+                    {uniqueValues.sport.map(sport => (
                       <option key={sport} value={sport}>{sport}</option>
                     ))}
                   </select>
@@ -273,8 +181,14 @@ export default function Search() {
 
         {/* Results */}
         <div className="space-y-3 md:space-y-4">
+          {isLoading && results.length > 0 && (
+            <div className="text-center py-4">
+              <SimpleLoader size="md" />
+            </div>
+          )}
+          
           <AnimatePresence>
-            {filteredUsers.map((user, index) => (
+            {results.map((user, index) => (
               <motion.div
                 key={user.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -287,7 +201,7 @@ export default function Search() {
             ))}
           </AnimatePresence>
           
-          {filteredUsers.length === 0 && (searchQuery.trim() || selectedFilters.role !== 'all' || selectedFilters.location !== 'all' || selectedFilters.sport !== 'all') && (
+          {results.length === 0 && !isLoading && (
             <div className="text-center py-8">
               <p className="text-gray-400 mb-2 text-responsive">No results found</p>
               <p className="text-xs md:text-sm text-gray-500">
