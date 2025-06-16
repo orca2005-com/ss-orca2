@@ -20,7 +20,7 @@ interface MediaViewerProps {
 }
 
 export function MediaViewer({ isOpen, onClose, media, initialIndex = 0 }: MediaViewerProps) {
-  const [currentIndex, setCurrentIndex] = useState(Math.max(0, Math.min(initialIndex, media.length - 1)));
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [showControls, setShowControls] = useState(true);
@@ -42,6 +42,15 @@ export function MediaViewer({ isOpen, onClose, media, initialIndex = 0 }: MediaV
     }
   });
 
+  // Set initial index when component mounts or media changes
+  useEffect(() => {
+    if (initialIndex >= 0 && initialIndex < media.length) {
+      setCurrentIndex(initialIndex);
+    } else {
+      setCurrentIndex(0);
+    }
+  }, [initialIndex, media]);
+
   const currentMedia = sanitizedMedia[currentIndex];
 
   // Reset states when media changes
@@ -50,12 +59,6 @@ export function MediaViewer({ isOpen, onClose, media, initialIndex = 0 }: MediaV
     setRotation(0);
     setIsVideoPlaying(false);
   }, [currentIndex]);
-
-  // Validate initial index
-  useEffect(() => {
-    const validIndex = Math.max(0, Math.min(initialIndex, sanitizedMedia.length - 1));
-    setCurrentIndex(validIndex);
-  }, [initialIndex, sanitizedMedia.length]);
 
   const resetControlsTimeout = useCallback(() => {
     if (controlsTimeoutRef.current) {

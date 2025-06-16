@@ -35,8 +35,8 @@ export function OptimizedImage({
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Enhanced sanitization and validation
-  const sanitizedSrc = sanitizeText(src);
-  const sanitizedAlt = sanitizeText(alt);
+  const sanitizedSrc = src ? sanitizeText(src) : '';
+  const sanitizedAlt = alt ? sanitizeText(alt) : '';
   const sanitizedPlaceholder = placeholder ? sanitizeText(placeholder) : undefined;
 
   // Enhanced URL validation with security checks
@@ -75,7 +75,7 @@ export function OptimizedImage({
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
-          if (isValidUrl(sanitizedSrc)) {
+          if (sanitizedSrc && isValidUrl(sanitizedSrc)) {
             setCurrentSrc(sanitizedSrc);
           } else {
             setHasError(true);
@@ -96,9 +96,13 @@ export function OptimizedImage({
 
   // Validate src on mount for priority images
   useEffect(() => {
-    if (priority && !isValidUrl(sanitizedSrc)) {
-      setHasError(true);
-      setIsLoading(false);
+    if (priority) {
+      if (!sanitizedSrc || !isValidUrl(sanitizedSrc)) {
+        setHasError(true);
+        setIsLoading(false);
+      } else {
+        setCurrentSrc(sanitizedSrc);
+      }
     }
   }, [priority, sanitizedSrc, isValidUrl]);
 

@@ -31,8 +31,10 @@ export function MediaGrid({
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const displayedMedia = media.slice(0, maxItems);
-  const remainingCount = media.length - maxItems;
+  // Filter out invalid media items
+  const validMedia = media.filter(item => item && item.url && typeof item.url === 'string');
+  const displayedMedia = validMedia.slice(0, maxItems);
+  const remainingCount = validMedia.length - maxItems;
 
   const handleMediaClick = (index: number) => {
     setSelectedIndex(index);
@@ -51,7 +53,7 @@ export function MediaGrid({
     return '';
   };
 
-  if (media.length === 0) return null;
+  if (validMedia.length === 0) return null;
 
   return (
     <>
@@ -145,7 +147,7 @@ export function MediaGrid({
           onClick={onViewAll}
           className="mt-3 w-full py-2 text-sm text-accent hover:text-accent-light transition-colors font-medium"
         >
-          View all {media.length} items
+          View all {validMedia.length} items
         </motion.button>
       )}
 
@@ -153,7 +155,7 @@ export function MediaGrid({
       <MediaViewer
         isOpen={isViewerOpen}
         onClose={() => setIsViewerOpen(false)}
-        media={media}
+        media={validMedia}
         initialIndex={selectedIndex}
       />
     </>
