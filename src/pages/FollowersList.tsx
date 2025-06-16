@@ -5,51 +5,34 @@ import { motion } from 'framer-motion';
 import { UserListItem } from '../components/ui/UserListItem';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { Input } from '../components/ui/Input';
-import { db } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
+import { mockProfiles } from '../data/mockProfiles';
 
 export default function FollowersList() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
-  const [followers, setFollowers] = useState<any[]>([]);
+  const [profile, setProfile] = useState(mockProfiles[id || '']);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [profileName, setProfileName] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
-      if (!id) {
+      if (!id || !mockProfiles[id]) {
         navigate('/home');
         return;
       }
 
-      try {
-        setIsLoading(true);
-        
-        // Get user profile to display name
-        const userData = await db.getUser(id);
-        setProfileName(userData.full_name);
-        
-        // Get followers
-        const followersData = await db.getFollowers(id);
-        setFollowers(followersData);
-      } catch (err: any) {
-        console.error('Error loading followers:', err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setProfile(mockProfiles[id]);
+      setIsLoading(false);
     };
 
     loadData();
   }, [id, navigate]);
 
-  const filteredFollowers = followers.filter(follower =>
-    follower.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredFollowers = profile?.followers?.filter(follower =>
+    follower.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     follower.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) || [];
 
   if (isLoading) {
     return (
@@ -62,23 +45,17 @@ export default function FollowersList() {
     );
   }
 
-  if (error) {
+  if (!profile) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
-            <Users className="w-8 h-8 text-red-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-2">Error Loading Followers</h1>
-            <p className="text-gray-400 mb-6">{error}</p>
-            <button
-              onClick={() => navigate('/home')}
-              className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors"
-            >
-              Go Home
-            </button>
-          </div>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Profile Not Found</h1>
+          <button
+            onClick={() => navigate('/home')}
+            className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors"
+          >
+            Go Home
+          </button>
         </div>
       </div>
     );
@@ -96,8 +73,8 @@ export default function FollowersList() {
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">{profileName}'s Followers</h1>
-            <p className="text-gray-400">{followers.length} followers</p>
+            <h1 className="text-2xl font-bold text-white">{profile.name}'s Followers</h1>
+            <p className="text-gray-400">{profile.followers?.length || 0} followers</p>
           </div>
         </div>
 
@@ -121,7 +98,7 @@ export default function FollowersList() {
             <div>
               <h2 className="text-lg font-semibold text-white">Followers</h2>
               <p className="text-sm text-gray-400">
-                {filteredFollowers.length} of {followers.length} followers
+                {filteredFollowers.length} of {profile.followers?.length || 0} followers
               </p>
             </div>
           </div>
@@ -136,12 +113,7 @@ export default function FollowersList() {
                   transition={{ delay: index * 0.05 }}
                 >
                   <UserListItem
-                    user={{
-                      id: follower.id,
-                      name: follower.full_name,
-                      role: follower.role,
-                      avatar: follower.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-                    }}
+                    user={follower}
                     index={index}
                     hoverColor="green"
                   />
