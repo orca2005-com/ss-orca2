@@ -303,7 +303,7 @@ export default function Home() {
                         }`}
                       >
                         {option.label}
-                      </button>
+                      </motion.button>
                     ))}
                   </motion.div>
                 )}
