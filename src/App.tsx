@@ -19,11 +19,9 @@ import About from './pages/About';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Contact from './pages/Contact';
-import { useAuth } from './context/AuthContext';
 
 function App() {
   const location = useLocation();
-  const { user, isLoading } = useAuth();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   useEffect(() => {
@@ -38,7 +36,6 @@ function App() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Show loading screen during initial app load
   if (isInitialLoading) {
     return (
       <div className="fixed inset-0 bg-dark flex items-center justify-center">
@@ -63,26 +60,16 @@ function App() {
     );
   }
 
-  // Show loading screen during auth state check
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-dark flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-accent text-lg font-medium">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <ErrorBoundary>
       <div className="mobile-optimized">
         <NetworkStatus />
         <Routes location={location} key={location.pathname}>
-          {/* Public routes */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/create-profile" element={<CreateProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/about" element={<About />} />
@@ -90,148 +77,17 @@ function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/contact" element={<Contact />} />
           
-          {/* Profile creation route - accessible when user exists but profile incomplete */}
-          <Route 
-            path="/create-profile" 
-            element={
-              user ? <CreateProfile /> : <Navigate to="/login" replace />
-            } 
-          />
-          
-          {/* Protected routes - require authentication and complete profile */}
           <Route element={<MainLayout />}>
-            <Route 
-              path="/home" 
-              element={
-                user ? (
-                  // Check if profile is complete
-                  user.bio && user.location ? (
-                    <Home />
-                  ) : (
-                    <Navigate to="/create-profile" replace />
-                  )
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              } 
-            />
-            <Route 
-              path="/search" 
-              element={
-                user ? (
-                  user.bio && user.location ? (
-                    <Search />
-                  ) : (
-                    <Navigate to="/create-profile" replace />
-                  )
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              } 
-            />
-            <Route 
-              path="/messages" 
-              element={
-                user ? (
-                  user.bio && user.location ? (
-                    <Messages />
-                  ) : (
-                    <Navigate to="/create-profile" replace />
-                  )
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              } 
-            />
-            <Route 
-              path="/notifications" 
-              element={
-                user ? (
-                  user.bio && user.location ? (
-                    <Notifications />
-                  ) : (
-                    <Navigate to="/create-profile" replace />
-                  )
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              } 
-            />
-            <Route 
-              path="/profile/:id" 
-              element={
-                user ? (
-                  user.bio && user.location ? (
-                    <Profile />
-                  ) : (
-                    <Navigate to="/create-profile" replace />
-                  )
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              } 
-            />
-            <Route 
-              path="/profile/:id/followers" 
-              element={
-                user ? (
-                  user.bio && user.location ? (
-                    <FollowersList />
-                  ) : (
-                    <Navigate to="/create-profile" replace />
-                  )
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              } 
-            />
-            <Route 
-              path="/profile/:id/following" 
-              element={
-                user ? (
-                  user.bio && user.location ? (
-                    <FollowingList />
-                  ) : (
-                    <Navigate to="/create-profile" replace />
-                  )
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              } 
-            />
+            <Route path="/home" element={<Home />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/profile/:id" element={<Profile />} />
+            <Route path="/profile/:id/followers" element={<FollowersList />} />
+            <Route path="/profile/:id/following" element={<FollowingList />} />
           </Route>
 
-          {/* Root redirect */}
-          <Route 
-            path="/" 
-            element={
-              user ? (
-                user.bio && user.location ? (
-                  <Navigate to="/home" replace />
-                ) : (
-                  <Navigate to="/create-profile" replace />
-                )
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            } 
-          />
-
-          {/* Catch all route */}
-          <Route 
-            path="*" 
-            element={
-              user ? (
-                user.bio && user.location ? (
-                  <Navigate to="/home" replace />
-                ) : (
-                  <Navigate to="/create-profile" replace />
-                )
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            } 
-          />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
     </ErrorBoundary>

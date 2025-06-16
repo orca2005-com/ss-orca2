@@ -25,7 +25,7 @@ interface ProfileData {
 export default function CreateProfile() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -41,37 +41,18 @@ export default function CreateProfile() {
   const [newCertification, setNewCertification] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Get role and other data from signup or location state
+  // Get role from signup data or location state
   useEffect(() => {
     const signupData = localStorage.getItem('signupData');
-    const stateData = location.state;
+    const roleFromState = location.state?.role;
     
-    if (stateData) {
-      setProfileData(prev => ({
-        ...prev,
-        role: stateData.role || 'player',
-        name: stateData.fullName || '',
-      }));
+    if (roleFromState) {
+      setProfileData(prev => ({ ...prev, role: roleFromState }));
     } else if (signupData) {
-      try {
-        const data = JSON.parse(signupData);
-        setProfileData(prev => ({
-          ...prev,
-          role: data.role || 'player',
-          name: data.fullName || '',
-        }));
-      } catch (error) {
-        console.error('Error parsing signup data:', error);
-      }
+      const data = JSON.parse(signupData);
+      setProfileData(prev => ({ ...prev, role: data.role || 'player' }));
     }
   }, [location.state]);
-
-  // Redirect if user is already authenticated and has a complete profile
-  useEffect(() => {
-    if (user && user.bio && user.location) {
-      navigate('/home');
-    }
-  }, [user, navigate]);
 
   const { getRootProps: getAvatarProps, getInputProps: getAvatarInputProps } = useDropzone({
     accept: { 'image/*': [] },
@@ -143,39 +124,14 @@ export default function CreateProfile() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     
-    try {
-      // Prepare profile data for update
-      const updateData = {
-        full_name: profileData.name,
-        bio: profileData.bio,
-        sport: profileData.sport,
-        location: profileData.location,
-        website_url: profileData.website,
-        role: profileData.role,
-        achievements: profileData.achievements,
-        certifications: profileData.certifications || [],
-        experience_years: profileData.experience ? parseInt(profileData.experience) : null,
-        position: profileData.position,
-        team_size: profileData.teamSize,
-        founded_year: profileData.foundedYear,
-        // For now, use placeholder URLs for avatar and banner
-        avatar_url: profileData.avatar ? URL.createObjectURL(profileData.avatar) : null,
-        cover_image_url: profileData.banner ? URL.createObjectURL(profileData.banner) : null
-      };
-
-      // Update profile
-      await updateProfile(updateData);
-      
-      // Clear signup data
-      localStorage.removeItem('signupData');
-      
-      // Navigate to home
-      navigate('/home');
-    } catch (error) {
-      console.error('Error creating profile:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Simulate profile creation
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Clear signup data
+    localStorage.removeItem('signupData');
+    
+    // Navigate to home
+    navigate('/home');
   };
 
   const getRoleIcon = (role: string) => {
