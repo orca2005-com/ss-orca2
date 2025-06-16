@@ -74,25 +74,6 @@ export const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 };
 
-// Safe URL validation that doesn't throw errors
-export const isValidUrl = (urlString: string): boolean => {
-  if (!urlString || typeof urlString !== 'string') {
-    return false;
-  }
-  
-  // Basic format check first
-  if (!urlString.includes('://') && !urlString.startsWith('data:')) {
-    return false;
-  }
-  
-  try {
-    const url = new URL(urlString);
-    return ['http:', 'https:', 'data:'].includes(url.protocol);
-  } catch {
-    return false;
-  }
-};
-
 // Enhanced validation with stricter security
 export const validateEmail = (email: string): boolean => {
   if (typeof email !== 'string') return false;
@@ -160,7 +141,32 @@ export const validatePassword = (password: string): { isValid: boolean; errors: 
 };
 
 export const validateUrl = (url: string): boolean => {
-  return isValidUrl(url);
+  if (typeof url !== 'string') return false;
+  
+  try {
+    const urlObj = new URL(url);
+    // Only allow HTTP and HTTPS protocols
+    if (!['http:', 'https:'].includes(urlObj.protocol)) return false;
+    
+    // Block localhost and private IPs in production
+    if (process.env.NODE_ENV === 'production') {
+      const hostname = urlObj.hostname.toLowerCase();
+      if (
+        hostname === 'localhost' ||
+        hostname.startsWith('127.') ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.match(/^172\.(1[6-9]|2[0-9]|3[01])\./) ||
+        hostname === '0.0.0.0'
+      ) {
+        return false;
+      }
+    }
+    
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 // Enhanced file utilities with security checks

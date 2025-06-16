@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Download, Share2, ZoomIn, ZoomOut, RotateCw, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { OptimizedImage } from './OptimizedImage';
 import { getOptimizedPexelsUrl, createPlaceholderUrl } from '../../utils/imageOptimization';
-import { sanitizeText, isValidUrl } from '../../utils';
+import { sanitizeText } from '../../utils';
 
 interface MediaItem {
   id: string;
@@ -32,32 +32,24 @@ export function MediaViewer({ isOpen, onClose, media, initialIndex = 0 }: MediaV
 
   // Validate and sanitize media data
   const sanitizedMedia = media.filter(item => {
-    if (!item || !item.url || !item.type) {
-      console.warn('Invalid media item:', item);
+    if (!item || !item.url || !item.type) return false;
+    
+    try {
+      new URL(item.url);
+      return ['image', 'video'].includes(item.type);
+    } catch {
       return false;
     }
-    
-    if (!isValidUrl(item.url)) {
-      console.warn('Invalid media URL:', item.url);
-      return false;
-    }
-    
-    if (!['image', 'video'].includes(item.type)) {
-      console.warn('Invalid media type:', item.type);
-      return false;
-    }
-    
-    return true;
   });
 
   // Set initial index when component mounts or media changes
   useEffect(() => {
-    if (initialIndex >= 0 && initialIndex < sanitizedMedia.length) {
+    if (initialIndex >= 0 && initialIndex < media.length) {
       setCurrentIndex(initialIndex);
     } else {
       setCurrentIndex(0);
     }
-  }, [initialIndex, sanitizedMedia.length]);
+  }, [initialIndex, media]);
 
   const currentMedia = sanitizedMedia[currentIndex];
 
@@ -190,7 +182,7 @@ export function MediaViewer({ isOpen, onClose, media, initialIndex = 0 }: MediaV
   };
 
   const handleDownload = useCallback(() => {
-    if (!currentMedia || !isValidUrl(currentMedia.url)) return;
+    if (!currentMedia) return;
     
     try {
       const link = document.createElement('a');
@@ -382,26 +374,18 @@ export function MediaViewer({ isOpen, onClose, media, initialIndex = 0 }: MediaV
                   />
                 ) : (
                   <div className="relative">
-                    {isValidUrl(currentMedia.url) ? (
-                      <video
-                        ref={videoRef}
-                        src={currentMedia.url}
-                        className="max-w-[90vw] max-h-[90vh] object-contain"
-                        controls={false}
-                        autoPlay={false}
-                        muted={isVideoMuted}
-                        playsInline
-                        onPlay={() => setIsVideoPlaying(true)}
-                        onPause={() => setIsVideoPlaying(false)}
-                        onError={(e) => {
-                          console.error('Video error:', e);
-                        }}
-                      />
-                    ) : (
-                      <div className="max-w-[90vw] max-h-[90vh] bg-dark-lighter flex items-center justify-center p-8">
-                        <p className="text-white">Unable to load video</p>
-                      </div>
-                    )}
+                    <video
+                      ref={videoRef}
+                      src={currentMedia.url}
+                      className="max-w-[90vw] max-h-[90vh] object-contain"
+                      controls={false}
+                      autoPlay={false}
+                      muted={isVideoMuted}
+                      playsInline
+                      onPlay={() => setIsVideoPlaying(true)}
+                      onPause={() => setIsVideoPlaying(false)}
+                      onError={(e) => console.error('Video error:', e)}
+                    />
                     
                     <AnimatePresence>
                       {showControls && (
