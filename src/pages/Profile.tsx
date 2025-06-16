@@ -6,66 +6,53 @@ import { ProfileTabs } from '../components/profile/ProfileTabs';
 import { MutualConnections } from '../components/profile/MutualConnections';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { useAuth } from '../context/AuthContext';
-import { mockProfiles } from '../data/mockProfiles';
+import { useProfile } from '../hooks/useSupabaseData';
 
 export default function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [profile, setProfile] = useState(mockProfiles[id || '']);
-  const [isLoading, setIsLoading] = useState(true);
-  const isOwnProfile = user?.id === id;
+  const { profile, isLoading, error } = useProfile(id || '');
   const [isEditing, setIsEditing] = useState(false);
   const [mutualConnections, setMutualConnections] = useState([]);
+  
+  const isOwnProfile = user?.id === id;
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!id || !mockProfiles[id]) {
-        navigate('/home');
-        return;
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setProfile(mockProfiles[id]);
-      
-      const mockMutualConnections = Object.values(mockProfiles)
-        .filter(p => p.id !== id && p.id !== user?.id)
-        .slice(0, 3)
-        .map(p => ({
-          id: p.id,
-          name: p.name,
-          avatar: p.avatar,
-          role: p.role
-        }));
-      setMutualConnections(mockMutualConnections);
-      
-      setIsLoading(false);
-      setIsEditing(false);
-    };
-
-    loadProfile();
-  }, [id, navigate, user?.id]);
-
-  const handleSaveProfile = (updatedProfile: any) => {
+  const handleSaveProfile = async (updatedProfile: any) => {
     if (!isOwnProfile) return;
-    setProfile({ ...profile, ...updatedProfile });
-    setIsEditing(false);
+    
+    try {
+      // Update profile in Supabase
+      await user?.updateProfile(updatedProfile);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
   };
 
   const handleUpdateAchievements = (achievements: string[]) => {
-    if (!isOwnProfile) return;
-    setProfile({ ...profile, achievements });
+    if (!isOwnProfile || !profile) return;
+    
+    handleSaveProfile({
+      ...profile,
+      achievements
+    });
   };
 
   const handleUpdateCertifications = (certifications: string[]) => {
-    if (!isOwnProfile) return;
-    setProfile({ ...profile, certifications });
+    if (!isOwnProfile || !profile) return;
+    
+    handleSaveProfile({
+      ...profile,
+      certifications
+    });
   };
 
   const handleUpdatePosts = (posts: any[]) => {
-    if (!isOwnProfile) return;
-    setProfile({ ...profile, posts });
+    if (!isOwnProfile || !profile) return;
+    
+    // In a real app, you'd delete the post from the database
+    console.log('Updating posts:', posts);
   };
 
   const handleViewMutualConnection = (connectionId: string) => {
@@ -87,7 +74,7 @@ export default function Profile() {
     );
   }
 
-  if (!profile) {
+  if (error || !profile) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-center">
@@ -105,7 +92,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-dark pb-8">
+    <div className="min-h-screen bg-dark pb-8 mobile-optimized">
       <EditableProfile 
         profile={profile} 
         onSave={handleSaveProfile}
@@ -142,7 +129,7 @@ export default function Profile() {
             {isOwnProfile && (
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-1 px-3 py-1.5 text-sm border border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-colors ml-auto"
+                className="flex items-center space-x-1 px-3 py-1.5 text-sm border border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-colors ml-auto ultra-touch"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>

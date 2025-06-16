@@ -6,13 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, isLoading } = useAuth();
   const location = useLocation();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [prefillEmail, setPrefillEmail] = useState<string>('');
-  const [loginAttempts, setLoginAttempts] = useState(0);
-  const [isBlocked, setIsBlocked] = useState(false);
-  const [blockTimeLeft, setBlockTimeLeft] = useState(0);
 
   // Check for success message from signup
   useEffect(() => {
@@ -27,50 +24,12 @@ export default function Login() {
     }
   }, [location.state]);
 
-  // Handle rate limiting
-  useEffect(() => {
-    if (isBlocked && blockTimeLeft > 0) {
-      const timer = setTimeout(() => {
-        setBlockTimeLeft(prev => prev - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (isBlocked && blockTimeLeft === 0) {
-      setIsBlocked(false);
-      setLoginAttempts(0);
-    }
-  }, [isBlocked, blockTimeLeft]);
-
   const handleLogin = async (email: string, password: string, remember: boolean) => {
-    try {
-      if (isBlocked) {
-        throw new Error(`Too many attempts. Please try again in ${blockTimeLeft} seconds`);
-      }
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      await login(email, password);
-      setLoginAttempts(0);
-    } catch (err: any) {
-      const newAttempts = loginAttempts + 1;
-      setLoginAttempts(newAttempts);
-      
-      if (newAttempts >= 5) {
-        setIsBlocked(true);
-        setBlockTimeLeft(300); // 5 minutes block
-        throw new Error('Too many failed attempts. Please try again in 5 minutes');
-      } else {
-        // Let the error bubble up to LoginForm to handle
-        throw err;
-      }
-    }
+    await login(email, password);
   };
 
   return (
-    <div className="min-h-screen bg-dark flex">
+    <div className="min-h-screen bg-dark flex mobile-optimized">
       {/* Left Section */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-dark-lighter">
         <div className="flex items-center space-x-3">
@@ -124,8 +83,8 @@ export default function Login() {
           <LoginForm 
             onSubmit={handleLogin} 
             prefillEmail={prefillEmail}
-            isBlocked={isBlocked}
-            blockTimeLeft={blockTimeLeft}
+            isBlocked={false}
+            blockTimeLeft={0}
           />
         </motion.div>
       </div>

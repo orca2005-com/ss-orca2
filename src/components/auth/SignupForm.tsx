@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { User, Users, GraduationCap, Mail, Lock, UserCircle, Plus, X, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 import { validateEmail, validatePassword, sanitizeText } from '../../utils';
 import { ERROR_MESSAGES, NAME_MAX_LENGTH } from '../../constants';
 
@@ -40,7 +40,7 @@ const suggestedCustomRoles = [
 ];
 
 export function SignupForm() {
-  const navigate = useNavigate();
+  const { signup, isLoading, error, clearError } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -52,8 +52,7 @@ export function SignupForm() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -71,7 +70,8 @@ export function SignupForm() {
     }
 
     setFormData({ ...formData, [name]: sanitizedValue });
-    setError(null);
+    setLocalError(null);
+    clearError();
   };
 
   const handleRoleSelect = (roleId: string) => {
@@ -83,7 +83,8 @@ export function SignupForm() {
       setShowCustomInput(false);
       setCustomRole('');
     }
-    setError(null);
+    setLocalError(null);
+    clearError();
   };
 
   const handleCustomRoleSubmit = () => {
@@ -92,7 +93,7 @@ export function SignupForm() {
       setSelectedRole(sanitizedRole);
       setShowCustomInput(false);
     } else {
-      setError('Role name must be between 1 and 50 characters');
+      setLocalError('Role name must be between 1 and 50 characters');
     }
   };
 
@@ -101,7 +102,8 @@ export function SignupForm() {
     setCustomRole(sanitizedRole);
     setSelectedRole(sanitizedRole);
     setShowCustomInput(false);
-    setError(null);
+    setLocalError(null);
+    clearError();
   };
 
   const validateForm = (): string | null => {
@@ -158,16 +160,15 @@ export function SignupForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSubmitting) return;
+    if (isLoading) return;
 
     const validationError = validateForm();
     if (validationError) {
-      setError(validationError);
+      setLocalError(validationError);
       return;
     }
 
-    setIsSubmitting(true);
-    setError(null);
+    setLocalError(null);
 
     try {
       // Sanitize all input data
@@ -180,28 +181,18 @@ export function SignupForm() {
 
       // Additional security checks
       if (sanitizedData.email.includes('script') || sanitizedData.fullName.includes('<')) {
-        setError(ERROR_MESSAGES.MALICIOUS_CONTENT);
+        setLocalError(ERROR_MESSAGES.MALICIOUS_CONTENT);
         return;
       }
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Store signup data securely
-      const signupDataToStore = {
-        fullName: sanitizedData.fullName,
-        email: sanitizedData.email,
-        role: sanitizedData.role
-      };
-      
-      localStorage.setItem('signupData', JSON.stringify(signupDataToStore));
-      navigate('/create-profile', { state: { role: sanitizedData.role } });
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+      await signup(sanitizedData);
+    } catch (err: any) {
+      // Error is handled by AuthContext
+      console.error('Signup error:', err);
     }
   };
+
+  const displayError = localError || error;
 
   return (
     <motion.form 
@@ -211,13 +202,13 @@ export function SignupForm() {
       animate={{ opacity: 1 }}
       transition={{ delay: 0.2 }}
     >
-      {error && (
+      {displayError && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-500 text-sm"
         >
-          {error}
+          {displayError}
         </motion.div>
       )}
 
@@ -230,16 +221,17 @@ export function SignupForm() {
             placeholder="Full Name"
             value={formData.fullName}
             onChange={handleInputChange}
-            disabled={isSubmitting}
+            disabled={isLoading}
             autoComplete="name"
             required
             maxLength={NAME_MAX_LENGTH}
             aria-label="Full name"
             className={`w-full pl-8 md:pl-10 pr-4 py-2.5 md:py-3 bg-dark-lighter border ${
-              error && !formData.fullName.trim() ? 'border-red-500' : 'border-dark-light'
+              displayError && !formData.fullName.trim() ? 'border-red-500' : 'border-dark-light'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
+            style={{ fontSize: '16px' }}
           />
         </div>
 
@@ -251,15 +243,16 @@ export function SignupForm() {
             placeholder="Email"
             value={formData.email}
             onChange={handleInputChange}
-            disabled={isSubmitting}
+            disabled={isLoading}
             autoComplete="email"
             required
             aria-label="Email address"
             className={`w-full pl-8 md:pl-10 pr-4 py-2.5 md:py-3 bg-dark-lighter border ${
-              error && (!formData.email.trim() || !validateEmail(formData.email)) ? 'border-red-500' : 'border-dark-light'
+              displayError && (!formData.email.trim() || !validateEmail(formData.email)) ? 'border-red-500' : 'border-dark-light'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
+            style={{ fontSize: '16px' }}
           />
         </div>
 
@@ -271,21 +264,22 @@ export function SignupForm() {
             placeholder="Password"
             value={formData.password}
             onChange={handleInputChange}
-            disabled={isSubmitting}
+            disabled={isLoading}
             autoComplete="new-password"
             required
             aria-label="Password"
             className={`w-full pl-8 md:pl-10 pr-12 py-2.5 md:py-3 bg-dark-lighter border ${
-              error && !validatePassword(formData.password).isValid ? 'border-red-500' : 'border-dark-light'
+              displayError && !validatePassword(formData.password).isValid ? 'border-red-500' : 'border-dark-light'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
+            style={{ fontSize: '16px' }}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            disabled={isSubmitting}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
+            disabled={isLoading}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50 ultra-touch"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff className="h-4 w-4 md:h-5 md:w-5" /> : <Eye className="h-4 w-4 md:h-5 md:w-5" />}
@@ -300,21 +294,22 @@ export function SignupForm() {
             placeholder="Confirm Password"
             value={formData.confirmPassword}
             onChange={handleInputChange}
-            disabled={isSubmitting}
+            disabled={isLoading}
             autoComplete="new-password"
             required
             aria-label="Confirm password"
             className={`w-full pl-8 md:pl-10 pr-12 py-2.5 md:py-3 bg-dark-lighter border ${
-              error && formData.password !== formData.confirmPassword ? 'border-red-500' : 'border-dark-light'
+              displayError && formData.password !== formData.confirmPassword ? 'border-red-500' : 'border-dark-light'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
+            style={{ fontSize: '16px' }}
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            disabled={isSubmitting}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
+            disabled={isLoading}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50 ultra-touch"
             aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
           >
             {showConfirmPassword ? <EyeOff className="h-4 w-4 md:h-5 md:w-5" /> : <Eye className="h-4 w-4 md:h-5 md:w-5" />}
@@ -331,14 +326,14 @@ export function SignupForm() {
               key={role.id}
               type="button"
               onClick={() => handleRoleSelect(role.id)}
-              disabled={isSubmitting}
-              whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-              whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+              disabled={isLoading}
+              whileHover={{ scale: isLoading ? 1 : 1.02 }}
+              whileTap={{ scale: isLoading ? 1 : 0.98 }}
               className={`relative overflow-hidden group p-4 rounded-lg border transition-all duration-200 text-left ${
                 selectedRole === role.id
                   ? 'border-accent bg-accent/20'
                   : 'border-dark-light bg-dark-lighter hover:border-accent'
-              } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div className="flex items-center space-x-3">
                 <div className={`p-2 rounded-lg ${selectedRole === role.id ? 'bg-accent/30' : 'bg-dark'}`}>
@@ -355,14 +350,14 @@ export function SignupForm() {
           <motion.button
             type="button"
             onClick={() => handleRoleSelect('custom')}
-            disabled={isSubmitting}
-            whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-            whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+            disabled={isLoading}
+            whileHover={{ scale: isLoading ? 1 : 1.02 }}
+            whileTap={{ scale: isLoading ? 1 : 0.98 }}
             className={`relative overflow-hidden group p-4 rounded-lg border transition-all duration-200 text-left ${
               showCustomInput
                 ? 'border-accent bg-accent/20'
                 : 'border-dark-light bg-dark-lighter hover:border-accent'
-            } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <div className="flex items-center space-x-3">
               <div className={`p-2 rounded-lg ${showCustomInput ? 'bg-accent/30' : 'bg-dark'}`}>
@@ -389,18 +384,19 @@ export function SignupForm() {
                 value={customRole}
                 onChange={(e) => setCustomRole(e.target.value.slice(0, 50))}
                 placeholder="Enter your role (e.g., Nutritionist, Sports Psychologist)"
-                disabled={isSubmitting}
+                disabled={isLoading}
                 maxLength={50}
                 className={`flex-1 px-4 py-2.5 md:py-3 bg-dark-lighter border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200 text-white placeholder-gray-400 text-sm md:text-base ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
-                onKeyPress={(e) => e.key === 'Enter' && !isSubmitting && handleCustomRoleSubmit()}
+                onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleCustomRoleSubmit()}
+                style={{ fontSize: '16px' }}
               />
               <button
                 type="button"
                 onClick={handleCustomRoleSubmit}
-                disabled={!customRole.trim() || isSubmitting}
-                className="px-4 py-2.5 md:py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!customRole.trim() || isLoading}
+                className="px-4 py-2.5 md:py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed ultra-touch"
               >
                 Add
               </button>
@@ -413,10 +409,10 @@ export function SignupForm() {
                   <button
                     key={role}
                     type="button"
-                    onClick={() => !isSubmitting && handleSuggestedRoleClick(role)}
-                    disabled={isSubmitting}
+                    onClick={() => !isLoading && handleSuggestedRoleClick(role)}
+                    disabled={isLoading}
                     className={`px-3 py-1 text-xs bg-dark border border-dark-light rounded-full text-gray-300 hover:border-accent hover:text-accent transition-colors ${
-                      isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                      isLoading ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   >
                     {role}
@@ -445,9 +441,9 @@ export function SignupForm() {
                 setSelectedRole(null);
                 setCustomRole('');
               }}
-              disabled={isSubmitting}
-              className={`text-gray-400 hover:text-gray-300 transition-colors ${
-                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              disabled={isLoading}
+              className={`text-gray-400 hover:text-gray-300 transition-colors ultra-touch ${
+                isLoading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
               <X className="w-4 h-4" />
@@ -458,12 +454,12 @@ export function SignupForm() {
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isLoading}
         className={`w-full bg-accent hover:bg-accent-dark text-white font-medium py-2.5 md:py-3 px-4 rounded-lg transition-colors duration-200 text-sm md:text-base flex items-center justify-center space-x-2 ${
-          isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+          isLoading ? 'opacity-50 cursor-not-allowed' : ''
         }`}
       >
-        {isSubmitting ? (
+        {isLoading ? (
           <>
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             <span>Creating Account...</span>

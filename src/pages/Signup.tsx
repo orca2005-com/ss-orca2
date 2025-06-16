@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 export default function Signup() {
   return (
-    <div className="min-h-screen bg-dark flex">
+    <div className="min-h-screen bg-dark flex mobile-optimized">
       {/* Left Section */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-dark-lighter">
         <div className="flex items-center space-x-3">

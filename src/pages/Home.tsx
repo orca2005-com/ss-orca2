@@ -2,136 +2,30 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Filter, Image as ImageIcon, Send, X, Video, Plus, ChevronDown } from 'lucide-react';
 import { FeedItem } from '../components/feed/FeedItem';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
-import { mockProfiles } from '../data/mockProfiles';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const mockPosts = [
-  {
-    id: '1',
-    author: {
-      id: '1',
-      name: mockProfiles['1'].name,
-      avatar: mockProfiles['1'].avatar,
-      role: mockProfiles['1'].role
-    },
-    content: 'Just finished an amazing training session! Working on improving my game every day. 💪',
-    media: [
-      {
-        url: 'https://images.pexels.com/photos/3076509/pexels-photo-3076509.jpeg',
-        type: 'image' as const
-      },
-      {
-        url: 'https://images.pexels.com/photos/3076514/pexels-photo-3076514.jpeg',
-        type: 'image' as const
-      },
-    ],
-    likes: 42,
-    comments: 8,
-    shares: 3,
-    timestamp: new Date(),
-  },
-  {
-    id: '2',
-    author: {
-      id: '2',
-      name: mockProfiles['2'].name,
-      avatar: mockProfiles['2'].avatar,
-      role: mockProfiles['2'].role
-    },
-    content: 'Big win today! Thanks to all our supporters who came out to cheer us on! 🏆',
-    likes: 128,
-    comments: 24,
-    shares: 12,
-    timestamp: new Date(),
-  },
-  {
-    id: '3',
-    author: {
-      id: '3',
-      name: mockProfiles['3'].name,
-      avatar: mockProfiles['3'].avatar,
-      role: mockProfiles['3'].role
-    },
-    content: 'Another successful training camp completed! Proud of everyone\'s progress. 🎾',
-    likes: 89,
-    comments: 15,
-    shares: 7,
-    timestamp: new Date(),
-  },
-  {
-    id: '4',
-    author: {
-      id: '4',
-      name: mockProfiles['4'].name,
-      avatar: mockProfiles['4'].avatar,
-      role: mockProfiles['4'].role
-    },
-    content: 'Training hard for the upcoming season! ⚽ The dedication is paying off.',
-    likes: 67,
-    comments: 12,
-    shares: 5,
-    timestamp: new Date(),
-  },
-  {
-    id: '5',
-    author: {
-      id: 'nutritionist1',
-      name: 'Dr. Emma Wilson',
-      avatar: 'https://images.pexels.com/photos/5327585/pexels-photo-5327585.jpeg',
-      role: 'Sports Nutritionist'
-    },
-    content: 'Proper nutrition is key to peak performance! Here are my top 5 pre-workout meal tips for athletes. 🥗',
-    likes: 156,
-    comments: 32,
-    shares: 18,
-    timestamp: new Date(),
-  },
-  {
-    id: '6',
-    author: {
-      id: 'physio1',
-      name: 'Mark Thompson',
-      avatar: 'https://images.pexels.com/photos/6975474/pexels-photo-6975474.jpeg',
-      role: 'Physiotherapist'
-    },
-    content: 'Recovery is just as important as training! Remember to listen to your body and take rest days when needed. 💪',
-    likes: 98,
-    comments: 21,
-    shares: 9,
-    timestamp: new Date(),
-  },
-];
+import { usePosts } from '../hooks/useSupabaseData';
+import { storage } from '../lib/supabase';
 
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { posts, isLoading, createPost, deletePost, toggleLike } = usePosts();
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [customRole, setCustomRole] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [posts, setPosts] = useState<typeof mockPosts>([]);
   const [newPost, setNewPost] = useState({
     content: '',
-    media: [] as File[],
   });
-  const [lastPostTime, setLastPostTime] = useState<Date | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [removedPosts, setRemovedPosts] = useState<Set<string>>(new Set());
   const filterDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    
-    const loadData = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setPosts(mockPosts);
-      setIsLoading(false);
-    };
-
-    loadData();
   }, []);
 
   useEffect(() => {
@@ -145,41 +39,42 @@ export default function Home() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleCreatePost = () => {
+  const handleCreatePost = async () => {
     if (!newPost.content.trim() && mediaFiles.length === 0) return;
-
-    if (lastPostTime) {
-      const timeDiff = Date.now() - lastPostTime.getTime();
-      const minutesDiff = timeDiff / (1000 * 60);
-      if (minutesDiff < 30) {
-        alert(`Please wait ${Math.ceil(30 - minutesDiff)} minutes before posting again.`);
-        return;
-      }
+    if (!user) {
+      navigate('/login');
+      return;
     }
 
-    const post = {
-      id: Date.now().toString(),
-      author: {
-        id: user?.id || '1',
-        name: user?.name || 'Current User',
-        avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
-        role: user?.role || 'player',
-      },
-      content: newPost.content,
-      media: mediaFiles.map(file => ({
-        url: URL.createObjectURL(file),
-        type: file.type.startsWith('video/') ? 'video' as const : 'image' as const
-      })),
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      timestamp: new Date(),
-    };
+    setIsSubmitting(true);
 
-    setPosts([post, ...posts]);
-    setNewPost({ content: '', media: [] });
-    setMediaFiles([]);
-    setLastPostTime(new Date());
+    try {
+      // Upload media files if any
+      const mediaUrls: string[] = [];
+      const mediaTypes: string[] = [];
+
+      if (mediaFiles.length > 0) {
+        for (const file of mediaFiles) {
+          const path = `${user.id}/${Date.now()}-${file.name}`;
+          await storage.uploadFile('media', path, file);
+          const url = await storage.getPublicUrl('media', path);
+          
+          mediaUrls.push(url);
+          mediaTypes.push(file.type.startsWith('video/') ? 'video' : 'image');
+        }
+      }
+
+      // Create post
+      await createPost(newPost.content, mediaFiles);
+      
+      // Reset form
+      setNewPost({ content: '' });
+      setMediaFiles([]);
+    } catch (error) {
+      console.error('Error creating post:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,8 +86,13 @@ export default function Home() {
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleRemovePost = (postId: string) => {
-    setRemovedPosts(prev => new Set([...prev, postId]));
+  const handleRemovePost = async (postId: string) => {
+    try {
+      await deletePost(postId);
+      setRemovedPosts(prev => new Set([...prev, postId]));
+    } catch (error) {
+      console.error('Error removing post:', error);
+    }
   };
 
   const handleCurrentUserProfileClick = () => {
@@ -269,25 +169,27 @@ export default function Home() {
           >
             <div className="w-12 h-12 flex-shrink-0">
               <img
-                src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"
+                src={user?.avatar_url || "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg"}
                 alt="Profile"
                 className="w-full h-full rounded-full object-cover border-2 border-dark-light cursor-pointer hover:ring-2 hover:ring-accent transition-all"
               />
             </div>
             <div className="flex-1 text-left min-w-0">
-              <h3 className="font-semibold text-white hover:text-accent transition-colors text-sm md:text-base truncate">{user?.name || 'Current User'}</h3>
-              <p className="text-xs text-gray-400">{user?.role || 'Professional Athlete'}</p>
+              <h3 className="font-semibold text-white hover:text-accent transition-colors text-sm md:text-base truncate">{user?.full_name || 'User'}</h3>
+              <p className="text-xs text-gray-400">{user?.role || 'Athlete'}</p>
             </div>
-            <div className="flex space-x-4 text-center flex-shrink-0">
-              <div>
-                <p className="text-sm font-semibold text-white">8.5k</p>
-                <p className="text-xs text-gray-400">Followers</p>
+            {user?.user_profiles?.stats && (
+              <div className="flex space-x-4 text-center flex-shrink-0">
+                <div>
+                  <p className="text-sm font-semibold text-white">{user.user_profiles.stats.followers || 0}</p>
+                  <p className="text-xs text-gray-400">Followers</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">{user.user_profiles.stats.following || 0}</p>
+                  <p className="text-xs text-gray-400">Following</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-white">2.1k</p>
-                <p className="text-xs text-gray-400">Following</p>
-              </div>
-            </div>
+            )}
           </button>
         </div>
 
@@ -296,11 +198,12 @@ export default function Home() {
           <div className="space-y-4">
             <textarea
               value={newPost.content}
-              onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+              onChange={(e) => setNewPost({ content: e.target.value })}
               placeholder="What's on your mind?"
               className="w-full bg-dark text-white placeholder-gray-400 rounded-lg px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-accent ultra-touch border border-dark-light"
               rows={3}
               style={{ fontSize: '16px' }} // Prevent zoom on iOS
+              disabled={isSubmitting}
             />
 
             {mediaFiles.length > 0 && (
@@ -315,6 +218,7 @@ export default function Home() {
                     <button
                       onClick={() => removeMedia(index)}
                       className="absolute top-2 right-2 ultra-touch bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      disabled={isSubmitting}
                     >
                       <X className="w-4 h-4 text-white" />
                     </button>
@@ -330,6 +234,7 @@ export default function Home() {
                 <button
                   onClick={() => document.getElementById('media-upload')?.click()}
                   className="flex items-center space-x-2 text-gray-400 hover:text-accent transition-colors ultra-touch"
+                  disabled={isSubmitting}
                 >
                   <ImageIcon className="w-5 h-5" />
                   <span className="text-sm hidden sm:inline">Photo</span>
@@ -337,6 +242,7 @@ export default function Home() {
                 <button
                   onClick={() => document.getElementById('media-upload')?.click()}
                   className="flex items-center space-x-2 text-gray-400 hover:text-accent transition-colors ultra-touch"
+                  disabled={isSubmitting}
                 >
                   <Video className="w-5 h-5" />
                   <span className="text-sm hidden sm:inline">Video</span>
@@ -344,10 +250,14 @@ export default function Home() {
               </div>
               <button
                 onClick={handleCreatePost}
-                disabled={!newPost.content.trim() && mediaFiles.length === 0}
+                disabled={(!newPost.content.trim() && mediaFiles.length === 0) || isSubmitting}
                 className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed ultra-touch text-sm font-medium"
               >
-                Post
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  'Post'
+                )}
               </button>
             </div>
             <input
@@ -357,6 +267,7 @@ export default function Home() {
               multiple
               className="hidden"
               onChange={handleMediaUpload}
+              disabled={isSubmitting}
             />
           </div>
         </div>
