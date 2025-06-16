@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePosts } from '../hooks/useSupabaseData';
-import { storage } from '../lib/supabase';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -49,22 +48,6 @@ export default function Home() {
     setIsSubmitting(true);
 
     try {
-      // Upload media files if any
-      const mediaUrls: string[] = [];
-      const mediaTypes: string[] = [];
-
-      if (mediaFiles.length > 0) {
-        for (const file of mediaFiles) {
-          const path = `${user.id}/${Date.now()}-${file.name}`;
-          await storage.uploadFile('media', path, file);
-          const url = await storage.getPublicUrl('media', path);
-          
-          mediaUrls.push(url);
-          mediaTypes.push(file.type.startsWith('video/') ? 'video' : 'image');
-        }
-      }
-
-      // Create post
       await createPost(newPost.content, mediaFiles);
       
       // Reset form
@@ -320,7 +303,7 @@ export default function Home() {
                         }`}
                       >
                         {option.label}
-                      </motion.button>
+                      </button>
                     ))}
                   </motion.div>
                 )}
@@ -414,7 +397,20 @@ export default function Home() {
           </AnimatePresence>
           {filteredPosts.length === 0 && (
             <div className="text-center py-8 text-gray-400">
-              {removedPosts.size > 0 ? 'No more posts to show' : 'No posts to show'}
+              <div className="space-y-4">
+                <div className="w-16 h-16 bg-gray-600/20 rounded-full flex items-center justify-center mx-auto">
+                  <ImageIcon className="w-8 h-8 text-gray-600" />
+                </div>
+                <div>
+                  <p className="text-lg font-medium mb-2">No posts to show</p>
+                  <p className="text-sm text-gray-500">
+                    {selectedRole !== 'all' 
+                      ? `No posts found for ${getFilterDisplayText().toLowerCase()}. Try adjusting your filters.`
+                      : 'Be the first to share something with the community!'
+                    }
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>

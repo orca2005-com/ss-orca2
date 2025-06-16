@@ -77,15 +77,22 @@ export default function Profile() {
   if (error || !profile) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Profile Not Found</h1>
-          <p className="text-gray-400 mb-6">The profile you're looking for doesn't exist.</p>
-          <button
-            onClick={() => navigate('/home')}
-            className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors"
-          >
-            Go Home
-          </button>
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-gray-600/20 rounded-full flex items-center justify-center mx-auto">
+            <LogOut className="w-8 h-8 text-gray-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-2">Profile Not Found</h1>
+            <p className="text-gray-400 mb-6">
+              {error || "The profile you're looking for doesn't exist or has been removed."}
+            </p>
+            <button
+              onClick={() => navigate('/home')}
+              className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors"
+            >
+              Go Home
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -106,8 +113,8 @@ export default function Profile() {
           <div className="lg:col-span-3">
             <ProfileTabs
               isPrivate={profile.isPrivate}
-              posts={profile.posts}
-              achievements={profile.achievements}
+              posts={profile.posts || []}
+              achievements={profile.achievements || []}
               certifications={profile.certifications || []}
               followers={profile.followers || []}
               following={profile.following || []}
@@ -120,7 +127,7 @@ export default function Profile() {
             />
           </div>
           <div className="lg:col-span-1 space-y-4">
-            {!isOwnProfile && (
+            {!isOwnProfile && mutualConnections.length > 0 && (
               <MutualConnections
                 connections={mutualConnections}
                 onViewProfile={handleViewMutualConnection}

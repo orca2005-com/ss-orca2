@@ -8,128 +8,22 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const mockChats = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg',
-    lastMessage: 'Great game yesterday!',
-    timestamp: new Date(),
-    unreadCount: 2,
-    isOnline: true,
-    isTyping: false,
-    lastSeen: new Date(),
-    participants: ['1', '3'],
-    isGroup: false,
-    messages: [
-      {
-        id: '1',
-        content: 'Hey, how was the game?',
-        timestamp: new Date(Date.now() - 3600000),
-        sender: {
-          id: '3',
-          name: 'Sarah Johnson',
-          avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
-        },
-        isRead: true
-      },
-      {
-        id: '2',
-        content: 'It was amazing! We won 3-1. The team played really well together.',
-        timestamp: new Date(Date.now() - 3500000),
-        sender: {
-          id: '1',
-          name: 'You',
-          avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-        },
-        isRead: true
-      },
-      {
-        id: '3',
-        content: 'That\'s awesome! I saw the highlights. Your goal in the second half was incredible!',
-        timestamp: new Date(Date.now() - 3400000),
-        sender: {
-          id: '3',
-          name: 'Sarah Johnson',
-          avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
-        },
-        isRead: true,
-        replyTo: {
-          id: '2',
-          content: 'It was amazing! We won 3-1. The team played really well together.',
-          sender: { name: 'You' }
-        }
-      },
-      {
-        id: '4',
-        content: 'Thanks! The coach has been working with us on those plays. Want to grab lunch tomorrow to celebrate?',
-        timestamp: new Date(Date.now() - 3300000),
-        sender: {
-          id: '1',
-          name: 'You',
-          avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-        },
-        isRead: true
-      },
-      {
-        id: '5',
-        content: 'Absolutely! How about that new sports bar downtown? I heard they have great food.',
-        timestamp: new Date(Date.now() - 1800000),
-        sender: {
-          id: '3',
-          name: 'Sarah Johnson',
-          avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
-        },
-        isRead: false
-      }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Elite Sports Academy',
-    avatar: 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg',
-    lastMessage: 'Training session tomorrow at 6 AM',
-    timestamp: new Date(Date.now() - 7200000),
-    unreadCount: 0,
-    isOnline: false,
-    isTyping: false,
-    lastSeen: new Date(Date.now() - 3600000),
-    participants: ['1', '2'],
-    isGroup: false,
-    messages: [
-      {
-        id: '1',
-        content: 'Training session tomorrow at 6 AM. Don\'t be late!',
-        timestamp: new Date(Date.now() - 7200000),
-        sender: {
-          id: '2',
-          name: 'Elite Sports Academy',
-          avatar: 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg'
-        },
-        isRead: true
-      }
-    ]
-  }
-];
-
 export default function Messages() {
   const { user, sendMessage } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedChat, setSelectedChat] = useState<typeof mockChats[0] | null>(null);
+  const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [chats, setChats] = useState<typeof mockChats>([]);
+  const [chats, setChats] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       await new Promise(resolve => setTimeout(resolve, 800));
-      const userChats = mockChats.filter(chat => 
-        chat.participants.includes(user?.id || '')
-      );
-      setChats(userChats);
+      // In a real app, this would load conversations from Supabase
+      setChats([]);
       setIsLoading(false);
     };
 
@@ -418,7 +312,7 @@ export default function Messages() {
                     </span>
                   </div>
                   <p className={`text-xs truncate ${chat.isTyping ? 'text-accent' : 'text-gray-400'}`}>
-                    {chat.isTyping ? 'Typing...' : chat.lastMessage}
+                    {chat.isTyping ? 'Typing...' : chat.lastMessage || 'No messages yet'}
                   </p>
                 </button>
                 {chat.unreadCount > 0 && (
@@ -428,6 +322,16 @@ export default function Messages() {
                 )}
               </motion.div>
             ))}
+            
+            {filteredChats.length === 0 && (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-gray-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-gray-600" />
+                </div>
+                <p className="text-gray-400 mb-2">No conversations yet</p>
+                <p className="text-xs text-gray-500">Start connecting with other users</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -520,7 +424,15 @@ export default function Messages() {
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-            Select a chat to start messaging
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-gray-600/20 rounded-full flex items-center justify-center mx-auto">
+                <Users className="w-8 h-8 text-gray-600" />
+              </div>
+              <div>
+                <p className="text-lg font-medium mb-2">No conversation selected</p>
+                <p className="text-sm text-gray-500">Choose a chat to start messaging</p>
+              </div>
+            </div>
           </div>
         )}
       </div>
