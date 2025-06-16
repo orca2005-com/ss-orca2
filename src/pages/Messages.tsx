@@ -7,90 +7,138 @@ import { Input } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, subscriptions } from '../lib/supabase';
+
+const mockChats = [
+  {
+    id: '1',
+    name: 'Sarah Johnson',
+    avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg',
+    lastMessage: 'Great game yesterday!',
+    timestamp: new Date(),
+    unreadCount: 2,
+    isOnline: true,
+    isTyping: false,
+    lastSeen: new Date(),
+    participants: ['1', '3'],
+    isGroup: false,
+    messages: [
+      {
+        id: '1',
+        content: 'Hey, how was the game?',
+        timestamp: new Date(Date.now() - 3600000),
+        sender: {
+          id: '3',
+          name: 'Sarah Johnson',
+          avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
+        },
+        isRead: true
+      },
+      {
+        id: '2',
+        content: 'It was amazing! We won 3-1. The team played really well together.',
+        timestamp: new Date(Date.now() - 3500000),
+        sender: {
+          id: '1',
+          name: 'You',
+          avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
+        },
+        isRead: true
+      },
+      {
+        id: '3',
+        content: 'That\'s awesome! I saw the highlights. Your goal in the second half was incredible!',
+        timestamp: new Date(Date.now() - 3400000),
+        sender: {
+          id: '3',
+          name: 'Sarah Johnson',
+          avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
+        },
+        isRead: true,
+        replyTo: {
+          id: '2',
+          content: 'It was amazing! We won 3-1. The team played really well together.',
+          sender: { name: 'You' }
+        }
+      },
+      {
+        id: '4',
+        content: 'Thanks! The coach has been working with us on those plays. Want to grab lunch tomorrow to celebrate?',
+        timestamp: new Date(Date.now() - 3300000),
+        sender: {
+          id: '1',
+          name: 'You',
+          avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
+        },
+        isRead: true
+      },
+      {
+        id: '5',
+        content: 'Absolutely! How about that new sports bar downtown? I heard they have great food.',
+        timestamp: new Date(Date.now() - 1800000),
+        sender: {
+          id: '3',
+          name: 'Sarah Johnson',
+          avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
+        },
+        isRead: false
+      }
+    ]
+  },
+  {
+    id: '2',
+    name: 'Elite Sports Academy',
+    avatar: 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg',
+    lastMessage: 'Training session tomorrow at 6 AM',
+    timestamp: new Date(Date.now() - 7200000),
+    unreadCount: 0,
+    isOnline: false,
+    isTyping: false,
+    lastSeen: new Date(Date.now() - 3600000),
+    participants: ['1', '2'],
+    isGroup: false,
+    messages: [
+      {
+        id: '1',
+        content: 'Training session tomorrow at 6 AM. Don\'t be late!',
+        timestamp: new Date(Date.now() - 7200000),
+        sender: {
+          id: '2',
+          name: 'Elite Sports Academy',
+          avatar: 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg'
+        },
+        isRead: true
+      }
+    ]
+  }
+];
 
 export default function Messages() {
   const { user, sendMessage } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedChat, setSelectedChat] = useState<any | null>(null);
+  const [selectedChat, setSelectedChat] = useState<typeof mockChats[0] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [chats, setChats] = useState<any[]>([]);
+  const [chats, setChats] = useState<typeof mockChats>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
-      if (!user) return;
-
-      try {
-        setIsLoading(true);
-        
-        // Get conversations
-        const conversationsData = await db.getConversations(user.id);
-        
-        // Transform data to match component expectations
-        const transformedChats = await Promise.all(conversationsData.map(async (item) => {
-          const conversation = item.conversation;
-          
-          // For direct conversations, get the other participant
-          const otherParticipant = conversation.conversation_participants
-            .find(cp => cp.user.id !== user.id)?.user;
-          
-          // Get messages
-          const messages = await db.getMessages(conversation.id);
-          
-          // Get last message
-          const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
-          
-          return {
-            id: conversation.id,
-            name: conversation.type === 'direct' ? otherParticipant?.full_name : conversation.name,
-            avatar: otherParticipant?.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
-            lastMessage: lastMessage?.content || '',
-            timestamp: new Date(lastMessage?.created_at || conversation.updated_at),
-            unreadCount: 0, // Would need a separate query to calculate this
-            isOnline: false, // Would need a separate system to track this
-            isTyping: false, // Would need a separate system to track this
-            lastSeen: new Date(),
-            participants: conversation.conversation_participants.map(cp => cp.user.id),
-            isGroup: conversation.type !== 'direct',
-            messages: messages.map(msg => ({
-              id: msg.id,
-              content: msg.content || '',
-              timestamp: new Date(msg.created_at),
-              sender: {
-                id: msg.sender.id,
-                name: msg.sender.full_name,
-                avatar: msg.sender.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-              },
-              isRead: true, // Would need a separate system to track this
-              media: msg.media_urls?.map((url, index) => ({
-                url,
-                type: msg.media_types?.[index] || 'image',
-                name: `Media ${index + 1}`
-              }))
-            }))
-          };
-        }));
-        
-        setChats(transformedChats);
-      } catch (err: any) {
-        console.error('Error loading conversations:', err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const userChats = mockChats.filter(chat => 
+        chat.participants.includes(user?.id || '')
+      );
+      setChats(userChats);
+      setIsLoading(false);
     };
 
     loadData();
-  }, [user]);
+  }, [user?.id]);
 
   // Handle starting a new chat from profile
   useEffect(() => {
-    if (location.state?.startChatWith && user) {
+    if (location.state?.startChatWith) {
       const { startChatWith } = location.state;
       
       // Check if chat already exists
@@ -102,98 +150,29 @@ export default function Messages() {
         setSelectedChat(existingChat);
       } else {
         // Create new chat
-        (async () => {
-          try {
-            const conversationId = await db.createOrGetConversation(user.id, startChatWith.id);
-            
-            // Get the new conversation
-            const messages = await db.getMessages(conversationId);
-            
-            const newChat = {
-              id: conversationId,
-              name: startChatWith.name,
-              avatar: startChatWith.avatar,
-              lastMessage: '',
-              timestamp: new Date(),
-              unreadCount: 0,
-              isOnline: false,
-              isTyping: false,
-              lastSeen: new Date(),
-              participants: [user.id, startChatWith.id],
-              isGroup: false,
-              messages: messages.map(msg => ({
-                id: msg.id,
-                content: msg.content || '',
-                timestamp: new Date(msg.created_at),
-                sender: {
-                  id: msg.sender.id,
-                  name: msg.sender.full_name,
-                  avatar: msg.sender.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-                },
-                isRead: true
-              }))
-            };
-            
-            setChats(prev => [newChat, ...prev]);
-            setSelectedChat(newChat);
-          } catch (err) {
-            console.error('Error creating conversation:', err);
-          }
-        })();
+        const newChat = {
+          id: Date.now().toString(),
+          name: startChatWith.name,
+          avatar: startChatWith.avatar,
+          lastMessage: '',
+          timestamp: new Date(),
+          unreadCount: 0,
+          isOnline: true,
+          isTyping: false,
+          lastSeen: new Date(),
+          participants: [user?.id || '', startChatWith.id],
+          isGroup: false,
+          messages: []
+        };
+        
+        setChats(prev => [newChat, ...prev]);
+        setSelectedChat(newChat);
       }
       
       // Clear the state
       navigate('/messages', { replace: true });
     }
-  }, [location.state, chats, user, navigate]);
-
-  // Subscribe to new messages
-  useEffect(() => {
-    if (!user || !selectedChat) return;
-    
-    const subscription = subscriptions.subscribeToMessages(selectedChat.id, (payload) => {
-      // Update the chat with the new message
-      const newMessage = payload.new;
-      
-      // Fetch sender details
-      db.getUser(newMessage.sender_id).then(sender => {
-        const transformedMessage = {
-          id: newMessage.id,
-          content: newMessage.content || '',
-          timestamp: new Date(newMessage.created_at),
-          sender: {
-            id: sender.id,
-            name: sender.full_name,
-            avatar: sender.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-          },
-          isRead: false
-        };
-        
-        setChats(prev => prev.map(chat => {
-          if (chat.id === selectedChat.id) {
-            return {
-              ...chat,
-              messages: [...chat.messages, transformedMessage],
-              lastMessage: newMessage.content || '',
-              timestamp: new Date(newMessage.created_at)
-            };
-          }
-          return chat;
-        }));
-        
-        setSelectedChat(prev => ({
-          ...prev,
-          messages: [...prev.messages, transformedMessage],
-          lastMessage: newMessage.content || '',
-          timestamp: new Date(newMessage.created_at)
-        }));
-      });
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [user, selectedChat]);
+  }, [location.state, chats, user?.id, navigate]);
 
   const filteredChats = chats.filter(chat =>
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -225,19 +204,42 @@ export default function Messages() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedChat || isSending || !user) return;
+    if (!newMessage.trim() || !selectedChat || isSending) return;
 
     setIsSending(true);
     
     try {
-      // Get recipient ID
-      const recipientId = selectedChat.participants.find(p => p !== user.id);
-      if (!recipientId) throw new Error('Recipient not found');
-      
-      // Send message
-      await sendMessage(recipientId, newMessage.trim());
-      
-      // Clear input
+      const message = {
+        id: Date.now().toString(),
+        content: newMessage.trim(),
+        timestamp: new Date(),
+        sender: {
+          id: user?.id || '',
+          name: user?.name || 'You',
+          avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
+        },
+        isRead: false
+      };
+
+      // Update chat with new message
+      const updatedChat = {
+        ...selectedChat,
+        messages: [...selectedChat.messages, message],
+        lastMessage: newMessage.trim(),
+        timestamp: new Date()
+      };
+
+      setSelectedChat(updatedChat);
+      setChats(prev => prev.map(chat => 
+        chat.id === selectedChat.id ? updatedChat : chat
+      ));
+
+      // Send message via auth context
+      const recipientId = selectedChat.participants.find(p => p !== user?.id);
+      if (recipientId) {
+        await sendMessage(recipientId, newMessage.trim());
+      }
+
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -252,23 +254,6 @@ export default function Messages() {
         <div className="text-center space-y-4">
           <SimpleLoader size="lg" />
           <p className="text-accent text-lg font-medium">Loading messages...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Error Loading Messages</h1>
-          <p className="text-gray-400 mb-6">{error}</p>
-          <button
-            onClick={() => navigate('/home')}
-            className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors"
-          >
-            Go Home
-          </button>
         </div>
       </div>
     );
@@ -380,13 +365,7 @@ export default function Messages() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-white">Messages</h2>
             <div className="flex items-center space-x-2">
-              <button 
-                className="ultra-touch text-gray-400 hover:text-accent transition-colors"
-                onClick={() => {
-                  // In a real app, this would open a new chat dialog
-                  console.log('New chat');
-                }}
-              >
+              <button className="ultra-touch text-gray-400 hover:text-accent transition-colors">
                 <Plus className="w-5 h-5" />
               </button>
               {user?.role === 'team' && (
@@ -449,13 +428,6 @@ export default function Messages() {
                 )}
               </motion.div>
             ))}
-            
-            {filteredChats.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-gray-400 mb-2">No conversations yet</p>
-                <p className="text-xs text-gray-500">Start connecting with other users</p>
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -7,7 +7,6 @@ import { MutualConnections } from '../components/profile/MutualConnections';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../hooks/useSupabaseData';
-import { db } from '../lib/supabase';
 
 export default function Profile() {
   const { id } = useParams();
@@ -15,53 +14,9 @@ export default function Profile() {
   const { user, logout } = useAuth();
   const { profile, isLoading, error } = useProfile(id || '');
   const [isEditing, setIsEditing] = useState(false);
-  const [mutualConnections, setMutualConnections] = useState<any[]>([]);
-  const [followers, setFollowers] = useState<any[]>([]);
-  const [following, setFollowing] = useState<any[]>([]);
-  const [posts, setPosts] = useState<any[]>([]);
-  const [loadingRelationships, setLoadingRelationships] = useState(true);
+  const [mutualConnections, setMutualConnections] = useState([]);
   
   const isOwnProfile = user?.id === id;
-
-  // Load followers, following, and posts
-  useEffect(() => {
-    const loadRelationships = async () => {
-      if (!id) return;
-      
-      try {
-        setLoadingRelationships(true);
-        
-        // Load followers
-        const followersData = await db.getFollowers(id);
-        setFollowers(followersData);
-        
-        // Load following
-        const followingData = await db.getFollowing(id);
-        setFollowing(followingData);
-        
-        // Load posts
-        // In a real app, you'd implement this
-        setPosts([]);
-        
-        // Calculate mutual connections if not own profile
-        if (!isOwnProfile && user) {
-          const userFollowing = await db.getFollowing(user.id);
-          const userFollowingIds = new Set(userFollowing.map(f => f.id));
-          
-          const mutual = followersData.filter(f => userFollowingIds.has(f.id));
-          setMutualConnections(mutual);
-        }
-      } catch (error) {
-        console.error('Error loading relationships:', error);
-      } finally {
-        setLoadingRelationships(false);
-      }
-    };
-    
-    if (profile) {
-      loadRelationships();
-    }
-  }, [id, profile, isOwnProfile, user]);
 
   const handleSaveProfile = async (updatedProfile: any) => {
     if (!isOwnProfile) return;
@@ -151,11 +106,11 @@ export default function Profile() {
           <div className="lg:col-span-3">
             <ProfileTabs
               isPrivate={profile.isPrivate}
-              posts={posts}
+              posts={profile.posts}
               achievements={profile.achievements}
               certifications={profile.certifications || []}
-              followers={followers}
-              following={following}
+              followers={profile.followers || []}
+              following={profile.following || []}
               userRole={profile.role}
               profileId={profile.id}
               isEditing={isEditing && isOwnProfile}
@@ -165,14 +120,9 @@ export default function Profile() {
             />
           </div>
           <div className="lg:col-span-1 space-y-4">
-            {!isOwnProfile && mutualConnections.length > 0 && (
+            {!isOwnProfile && (
               <MutualConnections
-                connections={mutualConnections.map(conn => ({
-                  id: conn.id,
-                  name: conn.full_name,
-                  role: conn.role,
-                  avatar: conn.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-                }))}
+                connections={mutualConnections}
                 onViewProfile={handleViewMutualConnection}
               />
             )}
