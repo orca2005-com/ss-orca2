@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User as SupabaseUser } from '@supabase/supabase-js';
-import { auth, db, subscriptions } from '../lib/supabase';
-import { handleApiError, sanitizeText, validateEmail, validatePassword } from '../utils';
+import { validateEmail, validatePassword, sanitizeText } from '../utils';
 
 interface User {
   id: string;
@@ -53,6 +51,7 @@ interface AuthContextType {
   markAllNotificationsAsRead: () => Promise<void>;
   unreadMessages: number;
   unreadNotifications: number;
+  canModify: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -60,94 +59,11 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [followingList, setFollowingList] = useState<string[]>([]);
-  const [unreadMessages, setUnreadMessages] = useState(0);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-
-  // Initialize auth state
-  useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await auth.getSession();
-        
-        if (session?.user && mounted) {
-          await loadUserData(session.user);
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    initializeAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-
-      if (event === 'SIGNED_IN' && session?.user) {
-        await loadUserData(session.user);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setFollowingList([]);
-        setUnreadMessages(0);
-        setUnreadNotifications(0);
-      }
-      
-      setIsLoading(false);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  // Load user data from database
-  const loadUserData = async (supabaseUser: SupabaseUser) => {
-    try {
-      const userData = await db.getUser(supabaseUser.id);
-      setUser(userData);
-
-      // Load following list
-      const following = await db.getFollowing(supabaseUser.id);
-      setFollowingList(following.map(f => f.id));
-
-      // Load unread counts
-      await loadUnreadCounts(supabaseUser.id);
-
-      // Subscribe to real-time notifications
-      subscriptions.subscribeToNotifications(supabaseUser.id, () => {
-        loadUnreadCounts(supabaseUser.id);
-      });
-
-    } catch (error) {
-      console.error('Error loading user data:', error);
-      setError('Failed to load user data');
-    }
-  };
-
-  // Load unread counts
-  const loadUnreadCounts = async (userId: string) => {
-    try {
-      const notifications = await db.getNotifications(userId, 50);
-      const unreadCount = notifications.filter(n => !n.is_read).length;
-      setUnreadNotifications(unreadCount);
-
-      // For messages, we'd need to implement a more complex query
-      // For now, using a placeholder
-      setUnreadMessages(0);
-    } catch (error) {
-      console.error('Error loading unread counts:', error);
-    }
-  };
+  const [unreadMessages, setUnreadMessages] = useState(2);
+  const [unreadNotifications, setUnreadNotifications] = useState(3);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -164,20 +80,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(passwordValidation.errors[0] || 'Invalid password');
       }
 
-      const { data, error } = await auth.signInWithPassword({
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Mock user data
+      const mockUser: User = {
+        id: '1',
         email: sanitizeText(email.toLowerCase()),
-        password: password
-      });
+        full_name: 'John Smith',
+        role: 'player',
+        sport: 'Basketball',
+        location: 'New York, USA',
+        bio: 'Professional basketball player with 5+ years of experience.',
+        avatar_url: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg',
+        cover_image_url: 'https://images.pexels.com/photos/3076509/pexels-photo-3076509.jpeg',
+        is_verified: false,
+        user_profiles: {
+          achievements: ['Regional Championship MVP 2023', 'All-Star Team Selection 2022'],
+          certifications: [],
+          stats: { followers: 1234, following: 89, posts: 45 }
+        }
+      };
 
-      if (error) throw error;
-
-      if (data.user) {
-        await loadUserData(data.user);
-        navigate('/home');
-      }
+      setUser(mockUser);
+      navigate('/home');
     } catch (error: any) {
-      const apiError = handleApiError(error);
-      setError(apiError.message);
+      setError(error.message || 'Invalid email or password');
       throw error;
     } finally {
       setIsLoading(false);
@@ -207,31 +135,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Role is required');
       }
 
-      const { data, error } = await auth.signUp({
-        email: sanitizeText(signupData.email.toLowerCase()),
-        password: signupData.password,
-        options: {
-          data: {
-            full_name: sanitizeText(signupData.fullName),
-            role: sanitizeText(signupData.role)
-          }
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Navigate to login with success message
+      navigate('/login', {
+        state: {
+          message: 'Account created successfully! Please sign in with your credentials.',
+          email: signupData.email
         }
       });
-
-      if (error) throw error;
-
-      if (data.user) {
-        // User will be automatically created in the database via trigger
-        navigate('/login', {
-          state: {
-            message: 'Account created successfully! Please check your email to verify your account.',
-            email: signupData.email
-          }
-        });
-      }
     } catch (error: any) {
-      const apiError = handleApiError(error);
-      setError(apiError.message);
+      setError(error.message);
       throw error;
     } finally {
       setIsLoading(false);
@@ -240,7 +155,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await auth.signOut();
       setUser(null);
       setFollowingList([]);
       setUnreadMessages(0);
@@ -257,34 +171,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       
-      // Update user table
-      if (profileData.full_name || profileData.bio || profileData.location || profileData.sport) {
-        await db.updateUser(user.id, {
-          full_name: profileData.full_name,
-          bio: profileData.bio,
-          location: profileData.location,
-          sport: profileData.sport,
-          avatar_url: profileData.avatar_url,
-          cover_image_url: profileData.cover_image_url,
-          website_url: profileData.website_url
-        });
-      }
-
-      // Update user profile table
-      if (profileData.achievements || profileData.certifications) {
-        await db.updateUserProfile(user.id, {
-          achievements: profileData.achievements,
-          certifications: profileData.certifications,
-          experience_years: profileData.experience_years,
-          skill_level: profileData.skill_level,
-          position: profileData.position,
-          team_size: profileData.team_size,
-          founded_year: profileData.founded_year
-        });
-      }
-
-      // Reload user data
-      await loadUserData({ id: user.id } as SupabaseUser);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update user state
+      setUser(prev => prev ? { ...prev, ...profileData } : null);
       
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -298,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      await db.followUser(user.id, userId);
+      await new Promise(resolve => setTimeout(resolve, 500));
       setFollowingList(prev => [...prev, userId]);
     } catch (error) {
       console.error('Error following user:', error);
@@ -310,7 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      await db.unfollowUser(user.id, userId);
+      await new Promise(resolve => setTimeout(resolve, 500));
       setFollowingList(prev => prev.filter(id => id !== userId));
     } catch (error) {
       console.error('Error unfollowing user:', error);
@@ -326,11 +217,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      // Create or get conversation
-      const conversationId = await db.createOrGetConversation(user.id, recipientId);
-      
-      // Send message
-      await db.sendMessage(conversationId, user.id, content);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('Message sent to:', recipientId, content);
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
@@ -339,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const markNotificationAsRead = async (notificationId: string) => {
     try {
-      await db.markNotificationAsRead(notificationId);
+      await new Promise(resolve => setTimeout(resolve, 200));
       setUnreadNotifications(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -350,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     
     try {
-      await db.markAllNotificationsAsRead(user.id);
+      await new Promise(resolve => setTimeout(resolve, 500));
       setUnreadNotifications(0);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
@@ -379,7 +267,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       markNotificationAsRead,
       markAllNotificationsAsRead,
       unreadMessages,
-      unreadNotifications
+      unreadNotifications,
+      canModify: true
     }}>
       {children}
     </AuthContext.Provider>
