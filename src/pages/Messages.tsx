@@ -7,7 +7,6 @@ import { Input } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, subscriptions } from '../lib/supabase';
 
 export default function Messages() {
   const { user, sendMessage } = useAuth();
@@ -22,75 +21,18 @@ export default function Messages() {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!user) return;
-
-      try {
-        setIsLoading(true);
-        
-        // Get conversations
-        const conversationsData = await db.getConversations(user.id);
-        
-        // Transform data to match component expectations
-        const transformedChats = await Promise.all(conversationsData.map(async (item) => {
-          const conversation = item.conversation;
-          
-          // For direct conversations, get the other participant
-          const otherParticipant = conversation.conversation_participants
-            .find(cp => cp.user.id !== user.id)?.user;
-          
-          // Get messages
-          const messages = await db.getMessages(conversation.id);
-          
-          // Get last message
-          const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
-          
-          return {
-            id: conversation.id,
-            name: conversation.type === 'direct' ? otherParticipant?.full_name : conversation.name,
-            avatar: otherParticipant?.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
-            lastMessage: lastMessage?.content || '',
-            timestamp: new Date(lastMessage?.created_at || conversation.updated_at),
-            unreadCount: 0, // Would need a separate query to calculate this
-            isOnline: false, // Would need a separate system to track this
-            isTyping: false, // Would need a separate system to track this
-            lastSeen: new Date(),
-            participants: conversation.conversation_participants.map(cp => cp.user.id),
-            isGroup: conversation.type !== 'direct',
-            messages: messages.map(msg => ({
-              id: msg.id,
-              content: msg.content || '',
-              timestamp: new Date(msg.created_at),
-              sender: {
-                id: msg.sender.id,
-                name: msg.sender.full_name,
-                avatar: msg.sender.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-              },
-              isRead: true, // Would need a separate system to track this
-              media: msg.media_urls?.map((url, index) => ({
-                url,
-                type: msg.media_types?.[index] || 'image',
-                name: `Media ${index + 1}`
-              }))
-            }))
-          };
-        }));
-        
-        setChats(transformedChats);
-      } catch (err: any) {
-        console.error('Error loading conversations:', err);
-        // Set empty state instead of error
-        setChats([]);
-      } finally {
-        setIsLoading(false);
-      }
+      await new Promise(resolve => setTimeout(resolve, 800));
+      // In a real app, this would load conversations from Supabase
+      setChats([]);
+      setIsLoading(false);
     };
 
     loadData();
-  }, [user]);
+  }, [user?.id]);
 
   // Handle starting a new chat from profile
   useEffect(() => {
-    if (location.state?.startChatWith && user) {
+    if (location.state?.startChatWith) {
       const { startChatWith } = location.state;
       
       // Check if chat already exists
@@ -102,98 +44,29 @@ export default function Messages() {
         setSelectedChat(existingChat);
       } else {
         // Create new chat
-        (async () => {
-          try {
-            const conversationId = await db.createOrGetConversation(user.id, startChatWith.id);
-            
-            // Get the new conversation
-            const messages = await db.getMessages(conversationId);
-            
-            const newChat = {
-              id: conversationId,
-              name: startChatWith.name,
-              avatar: startChatWith.avatar,
-              lastMessage: '',
-              timestamp: new Date(),
-              unreadCount: 0,
-              isOnline: false,
-              isTyping: false,
-              lastSeen: new Date(),
-              participants: [user.id, startChatWith.id],
-              isGroup: false,
-              messages: messages.map(msg => ({
-                id: msg.id,
-                content: msg.content || '',
-                timestamp: new Date(msg.created_at),
-                sender: {
-                  id: msg.sender.id,
-                  name: msg.sender.full_name,
-                  avatar: msg.sender.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-                },
-                isRead: true
-              }))
-            };
-            
-            setChats(prev => [newChat, ...prev]);
-            setSelectedChat(newChat);
-          } catch (err) {
-            console.error('Error creating conversation:', err);
-          }
-        })();
+        const newChat = {
+          id: Date.now().toString(),
+          name: startChatWith.name,
+          avatar: startChatWith.avatar,
+          lastMessage: '',
+          timestamp: new Date(),
+          unreadCount: 0,
+          isOnline: true,
+          isTyping: false,
+          lastSeen: new Date(),
+          participants: [user?.id || '', startChatWith.id],
+          isGroup: false,
+          messages: []
+        };
+        
+        setChats(prev => [newChat, ...prev]);
+        setSelectedChat(newChat);
       }
       
       // Clear the state
       navigate('/messages', { replace: true });
     }
-  }, [location.state, chats, user, navigate]);
-
-  // Subscribe to new messages
-  useEffect(() => {
-    if (!user || !selectedChat) return;
-    
-    const subscription = subscriptions.subscribeToMessages(selectedChat.id, (payload) => {
-      // Update the chat with the new message
-      const newMessage = payload.new;
-      
-      // Fetch sender details
-      db.getUser(newMessage.sender_id).then(sender => {
-        const transformedMessage = {
-          id: newMessage.id,
-          content: newMessage.content || '',
-          timestamp: new Date(newMessage.created_at),
-          sender: {
-            id: sender.id,
-            name: sender.full_name,
-            avatar: sender.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-          },
-          isRead: false
-        };
-        
-        setChats(prev => prev.map(chat => {
-          if (chat.id === selectedChat.id) {
-            return {
-              ...chat,
-              messages: [...chat.messages, transformedMessage],
-              lastMessage: newMessage.content || '',
-              timestamp: new Date(newMessage.created_at)
-            };
-          }
-          return chat;
-        }));
-        
-        setSelectedChat(prev => ({
-          ...prev,
-          messages: [...prev.messages, transformedMessage],
-          lastMessage: newMessage.content || '',
-          timestamp: new Date(newMessage.created_at)
-        }));
-      });
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [user, selectedChat]);
+  }, [location.state, chats, user?.id, navigate]);
 
   const filteredChats = chats.filter(chat =>
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -225,19 +98,42 @@ export default function Messages() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedChat || isSending || !user) return;
+    if (!newMessage.trim() || !selectedChat || isSending) return;
 
     setIsSending(true);
     
     try {
-      // Get recipient ID
-      const recipientId = selectedChat.participants.find(p => p !== user.id);
-      if (!recipientId) throw new Error('Recipient not found');
-      
-      // Send message
-      await sendMessage(recipientId, newMessage.trim());
-      
-      // Clear input
+      const message = {
+        id: Date.now().toString(),
+        content: newMessage.trim(),
+        timestamp: new Date(),
+        sender: {
+          id: user?.id || '',
+          name: user?.name || 'You',
+          avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
+        },
+        isRead: false
+      };
+
+      // Update chat with new message
+      const updatedChat = {
+        ...selectedChat,
+        messages: [...selectedChat.messages, message],
+        lastMessage: newMessage.trim(),
+        timestamp: new Date()
+      };
+
+      setSelectedChat(updatedChat);
+      setChats(prev => prev.map(chat => 
+        chat.id === selectedChat.id ? updatedChat : chat
+      ));
+
+      // Send message via auth context
+      const recipientId = selectedChat.participants.find(p => p !== user?.id);
+      if (recipientId) {
+        await sendMessage(recipientId, newMessage.trim());
+      }
+
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);

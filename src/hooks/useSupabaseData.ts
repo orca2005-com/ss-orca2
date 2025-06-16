@@ -7,7 +7,6 @@ export function usePosts(limit = 20) {
   const [posts, setPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
 
   const loadPosts = async () => {
     try {
@@ -48,6 +47,7 @@ export function usePosts(limit = 20) {
 
   const createPost = async (content: string, mediaFiles: File[] = []) => {
     try {
+      const { user } = useAuth();
       if (!user) throw new Error('User not authenticated');
 
       // For now, we'll use placeholder URLs for media
@@ -105,6 +105,7 @@ export function usePosts(limit = 20) {
 
   const toggleLike = async (postId: string) => {
     try {
+      const { user } = useAuth();
       if (!user) throw new Error('User not authenticated');
 
       const isLiked = await db.toggleLike(postId, user.id);

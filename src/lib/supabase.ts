@@ -44,10 +44,7 @@ export const db = {
   async updateUser(id: string, updates: any) {
     const { data, error } = await supabase
       .from('users')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
@@ -59,10 +56,7 @@ export const db = {
   async updateUserProfile(userId: string, updates: any) {
     const { data, error } = await supabase
       .from('user_profiles')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      .update(updates)
       .eq('user_id', userId)
       .select()
       .single();
@@ -96,7 +90,7 @@ export const db = {
       .range(offset, offset + limit - 1);
     
     if (error) throw error;
-    return data || [];
+    return data;
   },
 
   async createPost(post: any) {
@@ -179,7 +173,7 @@ export const db = {
       .order('created_at', { ascending: true });
     
     if (error) throw error;
-    return data || [];
+    return data;
   },
 
   async createComment(comment: any) {
@@ -308,7 +302,7 @@ export const db = {
       .order('conversation.updated_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return data;
   },
 
   async getMessages(conversationId: string, limit = 50) {
@@ -328,7 +322,7 @@ export const db = {
       .limit(limit);
     
     if (error) throw error;
-    return data || [];
+    return data;
   },
 
   async sendMessage(conversationId: string, senderId: string, content: string) {
@@ -381,7 +375,7 @@ export const db = {
       .limit(limit);
     
     if (error) throw error;
-    return data || [];
+    return data;
   },
 
   async markNotificationAsRead(id: string) {
@@ -444,7 +438,7 @@ export const db = {
     const { data, error } = await queryBuilder.limit(50);
     
     if (error) throw error;
-    return data || [];
+    return data;
   }
 };
 

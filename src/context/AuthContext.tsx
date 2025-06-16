@@ -53,7 +53,6 @@ interface AuthContextType {
   markAllNotificationsAsRead: () => Promise<void>;
   unreadMessages: number;
   unreadNotifications: number;
-  canModify: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -380,8 +379,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       markNotificationAsRead,
       markAllNotificationsAsRead,
       unreadMessages,
-      unreadNotifications,
-      canModify: !!user
+      unreadNotifications
     }}>
       {children}
     </AuthContext.Provider>
