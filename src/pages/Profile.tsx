@@ -6,46 +6,70 @@ import { ProfileTabs } from '../components/profile/ProfileTabs';
 import { MutualConnections } from '../components/profile/MutualConnections';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { useAuth } from '../context/AuthContext';
-import { useApi } from '../hooks/useApi';
-import { apiService } from '../services/api';
+import { mockProfiles } from '../data/mockProfiles';
 
 export default function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [profile, setProfile] = useState(mockProfiles[id || '']);
+  const [isLoading, setIsLoading] = useState(true);
   const isOwnProfile = user?.id === id;
   const [isEditing, setIsEditing] = useState(false);
-
-  // Use API hook for profile data
-  const {
-    data: profileData,
-    loading: isLoading,
-    error: profileError,
-    refetch
-  } = useApi(
-    () => id ? apiService.getUserProfile(id) : Promise.reject('No user ID'),
-    [id]
-  );
-
-  const profile = profileData?.user;
+  const [mutualConnections, setMutualConnections] = useState([]);
 
   useEffect(() => {
-    if (!id) {
-      navigate('/home');
-      return;
-    }
-  }, [id, navigate]);
+    const loadProfile = async () => {
+      if (!id || !mockProfiles[id]) {
+        navigate('/home');
+        return;
+      }
 
-  const handleSaveProfile = async (updatedProfile: any) => {
-    if (!isOwnProfile) return;
-    
-    try {
-      await apiService.updateProfile(updatedProfile);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setProfile(mockProfiles[id]);
+      
+      const mockMutualConnections = Object.values(mockProfiles)
+        .filter(p => p.id !== id && p.id !== user?.id)
+        .slice(0, 3)
+        .map(p => ({
+          id: p.id,
+          name: p.name,
+          avatar: p.avatar,
+          role: p.role
+        }));
+      setMutualConnections(mockMutualConnections);
+      
+      setIsLoading(false);
       setIsEditing(false);
-      refetch();
-    } catch (error) {
-      console.error('Error updating profile:', error);
-    }
+    };
+
+    loadProfile();
+  }, [id, navigate, user?.id]);
+
+  const handleSaveProfile = (updatedProfile: any) => {
+    if (!isOwnProfile) return;
+    setProfile({ ...profile, ...updatedProfile });
+    setIsEditing(false);
+  };
+
+  const handleUpdateAchievements = (achievements: string[]) => {
+    if (!isOwnProfile) return;
+    setProfile({ ...profile, achievements });
+  };
+
+  const handleUpdateCertifications = (certifications: string[]) => {
+    if (!isOwnProfile) return;
+    setProfile({ ...profile, certifications });
+  };
+
+  const handleUpdatePosts = (posts: any[]) => {
+    if (!isOwnProfile) return;
+    setProfile({ ...profile, posts });
+  };
+
+  const handleViewMutualConnection = (connectionId: string) => {
+    navigate(`/profile/${connectionId}`);
   };
 
   const handleLogout = () => {
@@ -63,14 +87,12 @@ export default function Profile() {
     );
   }
 
-  if (profileError || !profile) {
+  if (!profile) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-4">Profile Not Found</h1>
-          <p className="text-gray-400 mb-6">
-            {profileError || "The profile you're looking for doesn't exist."}
-          </p>
+          <p className="text-gray-400 mb-6">The profile you're looking for doesn't exist.</p>
           <button
             onClick={() => navigate('/home')}
             className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors"
@@ -97,21 +119,24 @@ export default function Profile() {
           <div className="lg:col-span-3">
             <ProfileTabs
               isPrivate={profile.isPrivate}
-              posts={profile.posts || []}
-              achievements={profile.achievements || []}
+              posts={profile.posts}
+              achievements={profile.achievements}
               certifications={profile.certifications || []}
               followers={profile.followers || []}
               following={profile.following || []}
               userRole={profile.role}
               profileId={profile.id}
               isEditing={isEditing && isOwnProfile}
+              onUpdateAchievements={isOwnProfile ? handleUpdateAchievements : undefined}
+              onUpdateCertifications={isOwnProfile ? handleUpdateCertifications : undefined}
+              onUpdatePosts={isOwnProfile ? handleUpdatePosts : undefined}
             />
           </div>
           <div className="lg:col-span-1 space-y-4">
-            {!isOwnProfile && profile.mutualConnections && (
+            {!isOwnProfile && (
               <MutualConnections
-                connections={profile.mutualConnections}
-                onViewProfile={(connectionId) => navigate(`/profile/${connectionId}`)}
+                connections={mutualConnections}
+                onViewProfile={handleViewMutualConnection}
               />
             )}
             {isOwnProfile && (
