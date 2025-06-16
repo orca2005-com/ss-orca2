@@ -1,87 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, Trash2, BookMarked as MarkAsRead } from 'lucide-react';
+import { Bell, Check, Trash2 } from 'lucide-react';
 import { NotificationItem } from '../components/notifications/NotificationItem';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const mockNotifications = [
-  {
-    id: '1',
-    type: 'like' as const,
-    user: {
-      name: 'Sarah Johnson',
-      avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg',
-    },
-    content: 'liked your recent achievement',
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-    isRead: false,
-  },
-  {
-    id: '2',
-    type: 'comment' as const,
-    user: {
-      name: 'John Smith',
-      avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg',
-    },
-    content: 'commented on your post',
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    isRead: true,
-  },
-  {
-    id: '3',
-    type: 'follow' as const,
-    user: {
-      name: 'Mike Rodriguez',
-      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg',
-    },
-    content: 'started following you',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60),
-    isRead: false,
-  },
-  {
-    id: '4',
-    type: 'message' as const,
-    user: {
-      name: 'Elite Sports Academy',
-      avatar: 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg',
-    },
-    content: 'sent you a message',
-    timestamp: new Date(Date.now() - 1000 * 60 * 90),
-    isRead: false,
-  },
-  {
-    id: '5',
-    type: 'rating' as const,
-    user: {
-      name: 'Coach Martinez',
-      avatar: 'https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg',
-    },
-    content: 'rated your performance',
-    timestamp: new Date(Date.now() - 1000 * 60 * 120),
-    isRead: true,
-  }
-];
+import { useApi } from '../hooks/useApi';
+import { apiService } from '../services/api';
 
 export default function Notifications() {
   const { markNotificationAsRead, markAllNotificationsAsRead } = useAuth();
-  const [notifications, setNotifications] = useState<typeof mockNotifications>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
 
-  useEffect(() => {
-    const loadData = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setNotifications(mockNotifications);
-      setIsLoading(false);
-    };
+  // Use API hook for notifications
+  const {
+    data: notificationsData,
+    loading: isLoading,
+    error: notificationsError,
+    refetch
+  } = useApi(() => apiService.getNotifications());
 
-    loadData();
-  }, []);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (notificationsData?.notifications) {
+      setNotifications(notificationsData.notifications);
+    }
+  }, [notificationsData]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const handleMarkAsRead = (id: string) => {
+  const handleMarkAsRead = async (id: string) => {
     setNotifications(prev =>
       prev.map(notification =>
         notification.id === id
@@ -89,24 +37,35 @@ export default function Notifications() {
           : notification
       )
     );
-    markNotificationAsRead(id);
+    await markNotificationAsRead(id);
   };
 
   const handleMarkAllAsRead = async () => {
     setIsMarkingAllRead(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, isRead: true }))
-    );
-    markAllNotificationsAsRead();
-    setIsMarkingAllRead(false);
+    try {
+      setNotifications(prev =>
+        prev.map(notification => ({ ...notification, isRead: true }))
+      );
+      await markAllNotificationsAsRead();
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      // Revert on error
+      refetch();
+    } finally {
+      setIsMarkingAllRead(false);
+    }
   };
 
-  const handleDeleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  const handleDeleteNotification = async (id: string) => {
+    try {
+      setNotifications(prev => prev.filter(notification => notification.id !== id));
+      // In a real app, you'd call an API to delete the notification
+      // await apiService.deleteNotification(id);
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      refetch();
+    }
   };
 
   if (isLoading) {
@@ -160,17 +119,30 @@ export default function Notifications() {
           </div>
 
           <div className="space-y-3">
-            <AnimatePresence>
-              {notifications.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onMarkAsRead={handleMarkAsRead}
-                  onDelete={handleDeleteNotification}
-                />
-              ))}
-            </AnimatePresence>
-            {notifications.length === 0 && (
+            {notificationsError ? (
+              <div className="text-center py-8 text-red-400">
+                <p>Error loading notifications: {notificationsError}</p>
+                <button
+                  onClick={refetch}
+                  className="mt-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors ultra-touch"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : (
+              <AnimatePresence>
+                {notifications.map((notification) => (
+                  <NotificationItem
+                    key={notification.id}
+                    notification={notification}
+                    onMarkAsRead={handleMarkAsRead}
+                    onDelete={handleDeleteNotification}
+                  />
+                ))}
+              </AnimatePresence>
+            )}
+            
+            {notifications.length === 0 && !isLoading && !notificationsError && (
               <div className="text-center py-8">
                 <Bell className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mx-auto mb-4" />
                 <p className="text-sm md:text-base text-gray-400 mb-2">No notifications</p>

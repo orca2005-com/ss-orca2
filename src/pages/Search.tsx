@@ -1,149 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { Search as SearchIcon } from 'lucide-react';
+import { Search as SearchIcon, Filter, MapPin, Users, Trophy } from 'lucide-react';
 import { UserCard } from '../components/search/UserCard';
 import { SimpleLoader } from '../components/ui/SimpleLoader';
-import { mockProfiles } from '../data/mockProfiles';
-
-const mockUsers = Object.values(mockProfiles).map(profile => ({
-  id: profile.id,
-  name: profile.name,
-  avatar: profile.avatar,
-  role: profile.role,
-  sport: profile.sport,
-  location: profile.location,
-  skillLevel: 'Professional'
-}));
-
-// Add some custom role users for demonstration
-const additionalUsers = [
-  {
-    id: 'nutritionist1',
-    name: 'Dr. Emma Wilson',
-    avatar: 'https://images.pexels.com/photos/5327585/pexels-photo-5327585.jpeg',
-    role: 'Sports Nutritionist',
-    sport: 'Nutrition & Wellness',
-    location: 'Los Angeles, USA',
-    skillLevel: 'Expert'
-  },
-  {
-    id: 'physio1',
-    name: 'Mark Thompson',
-    avatar: 'https://images.pexels.com/photos/6975474/pexels-photo-6975474.jpeg',
-    role: 'Physiotherapist',
-    sport: 'Sports Medicine',
-    location: 'London, UK',
-    skillLevel: 'Certified'
-  },
-  {
-    id: 'psychologist1',
-    name: 'Dr. Sarah Chen',
-    avatar: 'https://images.pexels.com/photos/5327921/pexels-photo-5327921.jpeg',
-    role: 'Sports Psychologist',
-    sport: 'Mental Performance',
-    location: 'Toronto, Canada',
-    skillLevel: 'PhD'
-  },
-  {
-    id: 'journalist1',
-    name: 'Alex Rivera',
-    avatar: 'https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg',
-    role: 'Sports Journalist',
-    sport: 'Sports Media',
-    location: 'New York, USA',
-    skillLevel: 'Senior Reporter'
-  },
-  {
-    id: 'agent1',
-    name: 'Michael Foster',
-    avatar: 'https://images.pexels.com/photos/3778876/pexels-photo-3778876.jpeg',
-    role: 'Sports Agent',
-    sport: 'Athlete Representation',
-    location: 'Miami, USA',
-    skillLevel: 'Licensed Agent'
-  },
-  {
-    id: 'trainer1',
-    name: 'Lisa Martinez',
-    avatar: 'https://images.pexels.com/photos/3768916/pexels-photo-3768916.jpeg',
-    role: 'Fitness Trainer',
-    sport: 'Personal Training',
-    location: 'Austin, USA',
-    skillLevel: 'Certified'
-  },
-  {
-    id: 'referee1',
-    name: 'David Kim',
-    avatar: 'https://images.pexels.com/photos/3621104/pexels-photo-3621104.jpeg',
-    role: 'Football Referee',
-    sport: 'Football Officiating',
-    location: 'Manchester, UK',
-    skillLevel: 'FIFA Certified'
-  }
-];
-
-const allUsers = [...mockUsers, ...additionalUsers];
+import { motion, AnimatePresence } from 'framer-motion';
+import { useApi } from '../hooks/useApi';
+import { apiService } from '../services/api';
 
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [users, setUsers] = useState<typeof allUsers>([]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setUsers(allUsers);
-      setIsLoading(false);
-    };
-
-    loadData();
-  }, []);
-
-  // Enhanced natural language search
-  const filteredUsers = users.filter(user => {
-    if (!searchQuery.trim()) return true;
-    
-    const query = searchQuery.toLowerCase();
-    const searchTerms = query.split(' ').filter(term => term.length > 0);
-    
-    // Create searchable text from user data
-    const searchableText = [
-      user.name,
-      user.role,
-      user.sport,
-      user.location,
-      user.skillLevel
-    ].join(' ').toLowerCase();
-    
-    // Check if all search terms are found in the searchable text
-    const matchesAllTerms = searchTerms.every(term => 
-      searchableText.includes(term)
-    );
-    
-    // Additional natural language patterns
-    const matchesNaturalLanguage = 
-      // "football player" -> matches role containing "player" and sport containing "football"
-      (query.includes('football player') && user.role.toLowerCase().includes('player') && user.sport.toLowerCase().includes('football')) ||
-      (query.includes('basketball coach') && user.role.toLowerCase().includes('coach') && user.sport.toLowerCase().includes('basketball')) ||
-      (query.includes('tennis player') && user.role.toLowerCase().includes('player') && user.sport.toLowerCase().includes('tennis')) ||
-      (query.includes('soccer player') && user.role.toLowerCase().includes('player') && (user.sport.toLowerCase().includes('soccer') || user.sport.toLowerCase().includes('football'))) ||
-      
-      // Professional roles
-      (query.includes('nutritionist') && user.role.toLowerCase().includes('nutritionist')) ||
-      (query.includes('physiotherapist') && user.role.toLowerCase().includes('physiotherapist')) ||
-      (query.includes('psychologist') && user.role.toLowerCase().includes('psychologist')) ||
-      (query.includes('journalist') && user.role.toLowerCase().includes('journalist')) ||
-      (query.includes('agent') && user.role.toLowerCase().includes('agent')) ||
-      (query.includes('trainer') && user.role.toLowerCase().includes('trainer')) ||
-      (query.includes('referee') && user.role.toLowerCase().includes('referee')) ||
-      
-      // Location-based searches
-      (query.includes('in ') && user.location.toLowerCase().includes(query.split('in ')[1]?.trim() || '')) ||
-      (query.includes('from ') && user.location.toLowerCase().includes(query.split('from ')[1]?.trim() || ''));
-
-    return matchesAllTerms || matchesNaturalLanguage;
+  const [selectedFilters, setSelectedFilters] = useState({
+    role: 'all',
+    location: 'all',
+    sport: 'all'
   });
+  const [showFilters, setShowFilters] = useState(false);
 
-  if (isLoading) {
+  // Use API hook for search
+  const {
+    data: searchResults,
+    loading: isLoading,
+    error: searchError,
+    refetch
+  } = useApi(
+    () => apiService.searchUsers(searchQuery, selectedFilters),
+    [searchQuery, selectedFilters]
+  );
+
+  const users = searchResults?.users || [];
+
+  const handleFilterChange = (filterType: string, value: string) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setSelectedFilters({
+      role: 'all',
+      location: 'all',
+      sport: 'all'
+    });
+    setSearchQuery('');
+  };
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.trim() || Object.values(selectedFilters).some(f => f !== 'all')) {
+        refetch();
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedFilters, refetch]);
+
+  if (isLoading && users.length === 0) {
     return (
       <div className="fixed inset-0 bg-dark flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -155,43 +67,147 @@ export default function Search() {
   }
 
   return (
-    <div className="min-h-screen bg-dark py-4 md:py-8 pb-24 md:pb-8">
-      <div className="max-w-4xl mx-auto px-4 space-y-4 md:space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl md:text-2xl font-bold text-white">Search Professionals</h1>
+    <div className="min-h-screen bg-dark mobile-optimized">
+      <div className="max-w-4xl mx-auto mobile-padding pb-20 md:pb-8 pt-4 md:pt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="heading-mobile">Search Professionals</h1>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center space-x-2 ultra-touch text-gray-400 hover:text-accent transition-colors"
+          >
+            <Filter className="w-5 h-5" />
+            <span className="text-sm">Filters</span>
+          </button>
         </div>
 
-        <div className="relative">
+        {/* Search Input */}
+        <div className="relative mb-4">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name, role, sport, location... (e.g., 'football player', 'nutritionist', 'coach in London')"
-            className="w-full pl-10 pr-4 py-3 bg-dark-lighter border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-100 text-white placeholder-gray-400 text-sm md:text-base ultra-touch"
+            placeholder="Search by name, role, sport, location..."
+            className="w-full pl-10 pr-4 py-3 bg-dark-lighter border border-dark-light rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-100 text-white placeholder-gray-400 text-responsive ultra-touch"
+            style={{ fontSize: '16px' }}
           />
         </div>
 
+        {/* Filters */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="card-mobile mb-4"
+            >
+              <h3 className="text-white font-medium mb-3">Filters</h3>
+              
+              <div className="space-y-4">
+                {/* Role Filter */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Role</label>
+                  <select
+                    value={selectedFilters.role}
+                    onChange={(e) => handleFilterChange('role', e.target.value)}
+                    className="w-full bg-dark border border-dark-light rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                    style={{ fontSize: '16px' }}
+                  >
+                    <option value="all">All Roles</option>
+                    <option value="player">Players</option>
+                    <option value="coach">Coaches</option>
+                    <option value="team">Teams</option>
+                    <option value="nutritionist">Nutritionists</option>
+                    <option value="physiotherapist">Physiotherapists</option>
+                    <option value="psychologist">Sports Psychologists</option>
+                  </select>
+                </div>
+
+                {/* Location Filter */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={selectedFilters.location === 'all' ? '' : selectedFilters.location}
+                    onChange={(e) => handleFilterChange('location', e.target.value || 'all')}
+                    placeholder="Enter location..."
+                    className="w-full bg-dark border border-dark-light rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                    style={{ fontSize: '16px' }}
+                  />
+                </div>
+
+                {/* Sport Filter */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Sport</label>
+                  <input
+                    type="text"
+                    value={selectedFilters.sport === 'all' ? '' : selectedFilters.sport}
+                    onChange={(e) => handleFilterChange('sport', e.target.value || 'all')}
+                    placeholder="Enter sport..."
+                    className="w-full bg-dark border border-dark-light rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                    style={{ fontSize: '16px' }}
+                  />
+                </div>
+
+                <button
+                  onClick={clearFilters}
+                  className="w-full py-2 text-sm text-accent hover:text-accent-light transition-colors ultra-touch"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Results */}
         <div className="space-y-3 md:space-y-4">
-          {filteredUsers.map((user, index) => (
-            <UserCard key={user.id} user={user} index={index} />
-          ))}
-          {filteredUsers.length === 0 && searchQuery.trim() && (
+          <AnimatePresence>
+            {users.map((user: any, index: number) => (
+              <motion.div
+                key={user.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <UserCard user={user} index={index} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          
+          {users.length === 0 && !isLoading && (searchQuery.trim() || Object.values(selectedFilters).some(f => f !== 'all')) && (
             <div className="text-center py-8">
-              <p className="text-gray-400 mb-2 text-sm md:text-base">No results found for "{searchQuery}"</p>
+              <p className="text-gray-400 mb-2 text-responsive">No results found</p>
               <p className="text-xs md:text-sm text-gray-500">
-                Try searching for specific roles like "nutritionist", "football player", or "coach in London"
+                Try adjusting your search terms or filters
               </p>
+            </div>
+          )}
+
+          {searchError && (
+            <div className="text-center py-8 text-red-400">
+              <p>Error searching: {searchError}</p>
+              <button
+                onClick={refetch}
+                className="mt-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors ultra-touch"
+              >
+                Try Again
+              </button>
             </div>
           )}
         </div>
 
-        {/* Natural Language Search Tips */}
-        <div className="bg-dark-lighter p-4 rounded-lg">
+        {/* Search Tips */}
+        <div className="card-mobile mt-6">
           <h3 className="text-white font-medium mb-3">💡 Search Tips</h3>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-300">
+          <div className="mobile-grid gap-4 text-sm text-gray-300">
             <div>
-              <h4 className="text-accent font-medium mb-2">Role-based searches:</h4>
+              <h4 className="text-accent font-medium mb-2 flex items-center">
+                <Users className="w-4 h-4 mr-1" />
+                Role-based searches:
+              </h4>
               <ul className="space-y-1 text-xs">
                 <li>• "football player"</li>
                 <li>• "basketball coach"</li>
@@ -200,12 +216,15 @@ export default function Search() {
               </ul>
             </div>
             <div>
-              <h4 className="text-accent font-medium mb-2">Location-based searches:</h4>
+              <h4 className="text-accent font-medium mb-2 flex items-center">
+                <MapPin className="w-4 h-4 mr-1" />
+                Location-based searches:
+              </h4>
               <ul className="space-y-1 text-xs">
-                <li>• "coach in India"</li>
-                <li>• "player from Pune"</li>
-                <li>• "trainer in Delhi"</li>
-                <li>• "agent from Mumbai"</li>
+                <li>• "coach in Mumbai"</li>
+                <li>• "player from Delhi"</li>
+                <li>• "trainer in Bangalore"</li>
+                <li>• "agent from Pune"</li>
               </ul>
             </div>
           </div>
