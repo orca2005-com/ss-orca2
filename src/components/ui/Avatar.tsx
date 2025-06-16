@@ -34,15 +34,12 @@ export function Avatar({
   const interactiveClasses = onClick ? 'cursor-pointer hover:ring-2 hover:ring-accent hover:scale-105' : '';
   const finalClasses = `${baseClasses} ${interactiveClasses} ${className}`;
 
-  // Ensure src is a valid URL or provide a fallback
-  const validSrc = src && typeof src === 'string' ? src : 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg';
-
   return (
     <OptimizedImage
-      src={getOptimizedPexelsUrl(validSrc, quality)}
+      src={getOptimizedPexelsUrl(src, quality)}
       alt={alt}
       className={finalClasses}
-      placeholder={createPlaceholderUrl(validSrc)}
+      placeholder={createPlaceholderUrl(src)}
       priority={priority}
       onClick={onClick}
     />

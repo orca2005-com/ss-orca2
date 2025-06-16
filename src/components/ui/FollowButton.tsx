@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, UserCheck } from 'lucide-react';
+import { UserPlus, UserCheck, UserMinus } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 
 export type FollowStatus = 'none' | 'following' | 'follows_you';
 
@@ -21,105 +22,94 @@ export function FollowButton({
   size = 'md',
   showTextOnMobile = true
 }: FollowButtonProps) {
-  const [followStatus, setFollowStatus] = useState<FollowStatus>('none');
+  const { user, followUser, unfollowUser, isFollowing } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   // Don't show follow button for own profile
-  if (userId === currentUserId) return null;
+  if (userId === (currentUserId || user?.id)) return null;
 
-  // Initialize follow status
-  useEffect(() => {
-    const checkFollowStatus = () => {
-      // For demo purposes, randomly assign follow status
-      // In real app, this would come from your backend
-      const random = Math.random();
-      
-      if (random < 0.3) {
-        setFollowStatus('follows_you');
-      } else if (random < 0.6) {
-        setFollowStatus('following');
-      } else {
-        setFollowStatus('none');
-      }
-    };
-    
-    setTimeout(checkFollowStatus, 100);
-  }, [userId]);
+  const following = isFollowing(userId);
 
   const handleFollow = async () => {
+    if (isLoading) return;
+    
     setIsLoading(true);
     
-    // Simulate follow/unfollow process
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    let newStatus: FollowStatus;
-    
-    // Simple toggle logic - much clearer!
-    if (followStatus === 'following') {
-      // If following, unfollow
-      newStatus = 'none';
-    } else {
-      // If not following, follow
-      newStatus = 'following';
+    try {
+      if (following) {
+        await unfollowUser(userId);
+        onFollowChange?.(userId, 'none');
+      } else {
+        await followUser(userId);
+        onFollowChange?.(userId, 'following');
+      }
+    } catch (error) {
+      console.error('Error updating follow status:', error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setFollowStatus(newStatus);
-    onFollowChange?.(userId, newStatus);
-    setIsLoading(false);
   };
 
-  // SIMPLIFIED LOGIC: Only 2 states that matter to users
-  const getFollowButtonText = () => {
-    if (followStatus === 'following') {
-      return 'Following';
+  const getButtonText = () => {
+    if (isLoading) return 'Loading...';
+    if (following) {
+      return isHovered ? 'Unfollow' : 'Following';
     }
     return 'Follow';
   };
 
-  const getFollowButtonIcon = () => {
-    if (followStatus === 'following') {
-      return UserCheck;
+  const getButtonIcon = () => {
+    if (isLoading) return null;
+    if (following) {
+      return isHovered ? UserMinus : UserCheck;
     }
     return UserPlus;
   };
 
-  // MUCH SIMPLER COLOR LOGIC:
-  const getFollowButtonStyle = () => {
-    if (followStatus === 'following') {
-      // GRAY: When you're following them (subtle, less prominent)
+  const getButtonStyle = () => {
+    if (following) {
+      if (isHovered) {
+        return 'bg-red-600 text-white border border-red-500 hover:bg-red-700';
+      }
       return 'bg-gray-600 text-white border border-gray-500 hover:bg-gray-700';
     }
-    // GREEN: When you can follow them (call to action)
     return 'bg-accent text-white hover:bg-accent-dark';
   };
 
   const getSizeClasses = () => {
     switch (size) {
       case 'sm':
-        return 'px-3 py-1.5 text-sm';
+        return 'px-3 py-1.5 text-sm min-h-[36px]';
       case 'lg':
-        return 'px-6 py-3 text-base';
+        return 'px-6 py-3 text-base min-h-[48px]';
       default:
-        return 'px-4 py-2 text-sm';
+        return 'px-4 py-2 text-sm min-h-[44px]';
     }
   };
 
-  const FollowIcon = getFollowButtonIcon();
+  const ButtonIcon = getButtonIcon();
 
   return (
     <motion.button
       onClick={handleFollow}
       disabled={isLoading}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      className={`flex items-center justify-center space-x-2 rounded-lg font-medium transition-all duration-200 ultra-touch disabled:opacity-50 disabled:cursor-not-allowed ${getFollowButtonStyle()} ${getSizeClasses()} ${className}`}
+      className={`flex items-center justify-center space-x-2 rounded-lg font-medium transition-all duration-200 ultra-touch disabled:opacity-50 disabled:cursor-not-allowed ${getButtonStyle()} ${getSizeClasses()} ${className}`}
     >
       {isLoading ? (
         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : (
         <>
-          <FollowIcon className="w-4 h-4" />
-          {showTextOnMobile && <span className={size === 'sm' ? 'hidden sm:inline' : ''}>{getFollowButtonText()}</span>}
+          {ButtonIcon && <ButtonIcon className="w-4 h-4" />}
+          {showTextOnMobile && (
+            <span className={size === 'sm' ? 'hidden sm:inline' : ''}>
+              {getButtonText()}
+            </span>
+          )}
         </>
       )}
     </motion.button>

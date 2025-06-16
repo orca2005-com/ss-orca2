@@ -1,16 +1,4 @@
 export const getOptimizedPexelsUrl = (originalUrl: string, quality: 'low' | 'medium' | 'high' = 'medium'): string => {
-  if (!originalUrl || typeof originalUrl !== 'string') {
-    return 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'; // Default fallback image
-  }
-
-  // Check if URL is valid
-  try {
-    new URL(originalUrl);
-  } catch (e) {
-    console.error('Invalid URL:', originalUrl);
-    return 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'; // Default fallback image
-  }
-
   if (!originalUrl.includes('pexels.com')) {
     return originalUrl;
   }
@@ -25,18 +13,6 @@ export const getOptimizedPexelsUrl = (originalUrl: string, quality: 'low' | 'med
 };
 
 export const createPlaceholderUrl = (originalUrl: string): string => {
-  if (!originalUrl || typeof originalUrl !== 'string') {
-    return 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=50&q=20';
-  }
-
-  // Check if URL is valid
-  try {
-    new URL(originalUrl);
-  } catch (e) {
-    console.error('Invalid URL for placeholder:', originalUrl);
-    return 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=50&q=20';
-  }
-
   if (!originalUrl.includes('pexels.com')) {
     return originalUrl;
   }

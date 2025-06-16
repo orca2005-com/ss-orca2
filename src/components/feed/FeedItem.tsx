@@ -55,14 +55,30 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [sharesCount, setSharesCount] = useState(post.shares);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const postMenuRef = useRef<HTMLDivElement>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   const isOwnPost = post.author.id === currentUserId;
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikesCount(prev => liked ? prev - 1 : prev + 1);
+  const handleLike = async () => {
+    // Optimistic update
+    const newLiked = !liked;
+    const newCount = newLiked ? likesCount + 1 : likesCount - 1;
+    
+    setLiked(newLiked);
+    setLikesCount(newCount);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 300));
+      // In a real app, this would update the backend
+    } catch (error) {
+      // Revert on error
+      setLiked(!newLiked);
+      setLikesCount(newLiked ? newCount - 1 : newCount + 1);
+      console.error('Error updating like:', error);
+    }
   };
 
   const handleViewProfile = (e: React.MouseEvent) => {
@@ -70,29 +86,47 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
     navigate(`/profile/${post.author.id}`);
   };
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || isSubmittingComment) return;
 
-    const comment: Comment = {
-      id: Date.now().toString(),
-      content: newComment.trim(),
-      author: {
-        id: currentUserId,
-        name: 'You',
-        avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
-      },
-      timestamp: new Date()
-    };
+    setIsSubmittingComment(true);
 
-    setComments(prev => [...prev, comment]);
-    setCommentsCount(prev => prev + 1);
-    setNewComment('');
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const comment: Comment = {
+        id: Date.now().toString(),
+        content: newComment.trim(),
+        author: {
+          id: currentUserId,
+          name: 'You',
+          avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
+        },
+        timestamp: new Date()
+      };
+
+      setComments(prev => [...prev, comment]);
+      setCommentsCount(prev => prev + 1);
+      setNewComment('');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
-  const handleDeleteComment = (commentId: string) => {
-    setComments(prev => prev.filter(comment => comment.id !== commentId));
-    setCommentsCount(prev => prev - 1);
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      setComments(prev => prev.filter(comment => comment.id !== commentId));
+      setCommentsCount(prev => prev - 1);
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    }
   };
 
   const handleNotInterested = () => {
@@ -424,6 +458,7 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
                   className="w-full bg-dark text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent ultra-touch text-sm placeholder-gray-400 resize-none border border-dark-light"
                   rows={2}
                   style={{ fontSize: '16px' }} // Prevent zoom on iOS
+                  disabled={isSubmittingComment}
                 />
               </div>
             </div>
@@ -432,11 +467,17 @@ export function FeedItem({ post, onRemovePost, currentUserId = '1' }: FeedItemPr
             <div className="flex justify-end pl-11">
               <button
                 type="submit"
-                disabled={!newComment.trim()}
+                disabled={!newComment.trim() || isSubmittingComment}
                 className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark disabled:opacity-50 disabled:cursor-not-allowed ultra-touch transition-colors flex items-center space-x-2 min-w-[80px] justify-center"
               >
-                <Send className="h-4 w-4" />
-                <span className="text-sm font-medium">Send</span>
+                {isSubmittingComment ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    <span className="text-sm font-medium">Send</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
