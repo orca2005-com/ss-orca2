@@ -11,7 +11,6 @@ export function usePosts(limit = 20) {
   const loadPosts = async () => {
     try {
       setIsLoading(true);
-      setError(null);
       const data = await db.getPosts(limit);
       
       // Transform data to match component expectations
@@ -23,10 +22,10 @@ export function usePosts(limit = 20) {
           type: post.media_types?.[index] || 'image'
         })) || [],
         author: {
-          id: post.author?.id || '',
-          name: post.author?.full_name || 'Unknown User',
-          avatar: post.author?.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
-          role: post.author?.role || 'User'
+          id: post.author.id,
+          name: post.author.full_name,
+          avatar: post.author.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
+          role: post.author.role
         },
         likes: post.post_interactions?.filter(i => i.interaction_type === 'like').length || 0,
         comments: post.comments?.length || 0,
@@ -36,9 +35,7 @@ export function usePosts(limit = 20) {
 
       setPosts(transformedPosts);
     } catch (err: any) {
-      console.error('Error loading posts:', err);
-      setError(err.message || 'Failed to load posts');
-      setPosts([]); // Set empty array on error
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -77,10 +74,10 @@ export function usePosts(limit = 20) {
           type: mediaTypes[index]
         })),
         author: {
-          id: newPost.author?.id || user.id,
-          name: newPost.author?.full_name || user.full_name || 'You',
-          avatar: newPost.author?.avatar_url || user.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
-          role: newPost.author?.role || user.role || 'User'
+          id: newPost.author.id,
+          name: newPost.author.full_name,
+          avatar: newPost.author.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
+          role: newPost.author.role
         },
         likes: 0,
         comments: 0,
@@ -91,8 +88,7 @@ export function usePosts(limit = 20) {
       setPosts(prev => [transformedPost, ...prev]);
       return transformedPost;
     } catch (err: any) {
-      console.error('Error creating post:', err);
-      setError(err.message || 'Failed to create post');
+      setError(err.message);
       throw err;
     }
   };
@@ -102,8 +98,7 @@ export function usePosts(limit = 20) {
       await db.deletePost(postId);
       setPosts(prev => prev.filter(post => post.id !== postId));
     } catch (err: any) {
-      console.error('Error deleting post:', err);
-      setError(err.message || 'Failed to delete post');
+      setError(err.message);
       throw err;
     }
   };
@@ -124,8 +119,7 @@ export function usePosts(limit = 20) {
 
       return isLiked;
     } catch (err: any) {
-      console.error('Error toggling like:', err);
-      setError(err.message || 'Failed to toggle like');
+      setError(err.message);
       throw err;
     }
   };
@@ -149,21 +143,15 @@ export function useProfile(userId: string) {
 
   useEffect(() => {
     const loadProfile = async () => {
-      if (!userId) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         setIsLoading(true);
-        setError(null);
         const data = await db.getUser(userId);
         
         // Transform data to match component expectations
         const transformedProfile = {
           id: data.id,
-          name: data.full_name || 'Unknown User',
-          role: data.role || 'User',
+          name: data.full_name,
+          role: data.role,
           avatar: data.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
           coverImage: data.cover_image_url || 'https://images.pexels.com/photos/3076509/pexels-photo-3076509.jpeg',
           sport: data.sport || '',
@@ -182,15 +170,15 @@ export function useProfile(userId: string) {
 
         setProfile(transformedProfile);
       } catch (err: any) {
-        console.error('Error loading profile:', err);
-        setError(err.message || 'Failed to load profile');
-        setProfile(null);
+        setError(err.message);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadProfile();
+    if (userId) {
+      loadProfile();
+    }
   }, [userId]);
 
   return { profile, isLoading, error };
@@ -205,14 +193,10 @@ export function useNotifications() {
 
   useEffect(() => {
     const loadNotifications = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
+      if (!user) return;
 
       try {
         setIsLoading(true);
-        setError(null);
         const data = await db.getNotifications(user.id);
         
         // Transform data to match component expectations
@@ -230,9 +214,7 @@ export function useNotifications() {
 
         setNotifications(transformedNotifications);
       } catch (err: any) {
-        console.error('Error loading notifications:', err);
-        setError(err.message || 'Failed to load notifications');
-        setNotifications([]);
+        setError(err.message);
       } finally {
         setIsLoading(false);
       }
@@ -260,9 +242,9 @@ export function useSearch() {
       // Transform data to match component expectations
       const transformedResults = data.map(user => ({
         id: user.id,
-        name: user.full_name || 'Unknown User',
+        name: user.full_name,
         avatar: user.avatar_url || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
-        role: user.role || 'User',
+        role: user.role,
         sport: user.sport || '',
         location: user.location || '',
         skillLevel: user.user_profiles?.skill_level || 'Professional'
@@ -270,9 +252,7 @@ export function useSearch() {
 
       setResults(transformedResults);
     } catch (err: any) {
-      console.error('Error searching:', err);
-      setError(err.message || 'Search failed');
-      setResults([]);
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }

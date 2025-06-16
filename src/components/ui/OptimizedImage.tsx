@@ -35,8 +35,8 @@ export function OptimizedImage({
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Enhanced sanitization and validation
-  const sanitizedSrc = sanitizeText(src || '');
-  const sanitizedAlt = sanitizeText(alt || '');
+  const sanitizedSrc = sanitizeText(src);
+  const sanitizedAlt = sanitizeText(alt);
   const sanitizedPlaceholder = placeholder ? sanitizeText(placeholder) : undefined;
 
   // Enhanced URL validation with security checks
